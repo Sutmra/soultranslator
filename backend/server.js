@@ -49,7 +49,7 @@ app.post("/api/ocr", async (req, res) => {
   if (!imageData) return res.status(400).json({ error: "imageData required" });
 
   try {
-    const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
     const response = await fetch(url, {
       method: "POST",

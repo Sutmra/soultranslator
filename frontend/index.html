@@ -67,7 +67,8 @@
   .step .hint{color:var(--dim);font-size:12px;margin-left:auto;font-family:var(--mono);}
 
   /* ---------- SCENE TABS ---------- */
-  .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  @media(max-width:640px){.tabs{grid-template-columns:repeat(2,1fr);}}
   .tab{cursor:pointer;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:16px 12px;text-align:left;transition:.18s;position:relative;overflow:hidden;}
   .tab:hover{border-color:#3a4049;transform:translateY(-2px);}
   .tab .emo{font-size:22px;}
@@ -186,7 +187,7 @@
 
   <!-- HERO -->
   <header>
-    <span class="badge"><span class="dot"></span>AI EMOTIONAL FORENSICS · v0.1 MVP</span>
+    <span class="badge"><span class="dot"></span>AI EMOTIONAL FORENSICS · V0.2</span>
     <h1><em>Soul</em>Translator<span class="cn">灵魂翻译器</span></h1>
     <p class="tagline">剥离对话里的<b>阴阳怪气</b>与字面噪声，还原对方的<b>真实意图</b>与<b>心理动机</b>，给你 4 套高情商回复脚本。<br>拒绝精神内耗，把聊天主动权拿回来。</p>
     <p class="intl">DECODE WHAT THEY <span style="color:var(--mag)">REALLY</span> MEAN · STOP OVERTHINKING · WIN THE CHAT</p>
@@ -197,17 +198,21 @@
   <!-- STEP 1 SCENE -->
   <div class="step"><span class="no">01</span><h2>选择场景</h2><span class="hint">SCENE</span></div>
   <div class="tabs" id="tabs">
-    <div class="tab on" data-scene="ambiguous">
+    <div class="tab on" data-scene="intimate">
       <span class="algo">// red-green light</span>
-      <div class="emo">💘</div><div class="t">暧昧推拉</div><div class="d">看清红绿灯，算清胜率</div>
+      <div class="emo">❤️</div><div class="t">恋爱/暧昧</div><div class="d">看清红绿灯，拒绝精神内耗</div>
     </div>
-    <div class="tab" data-scene="lover">
-      <span class="algo">// anti-overthink</span>
-      <div class="emo">🫂</div><div class="t">亲密爱人</div><div class="d">化解内耗，好好说话</div>
-    </div>
-    <div class="tab" data-scene="friend">
+    <div class="tab" data-scene="casual">
       <span class="algo">// decode shade</span>
-      <div class="emo">🎭</div><div class="t">塑料 / 朋友</div><div class="d">拆穿隐性攻击与阴阳</div>
+      <div class="emo">👥</div><div class="t">朋友/人情</div><div class="d">拒绝无效社交，手撕阴阳怪气</div>
+    </div>
+    <div class="tab" data-scene="authority">
+      <span class="algo">// anti-pua</span>
+      <div class="emo">⚖️</div><div class="t">老板/导师</div><div class="d">高情商向上管理，反职场PUA</div>
+    </div>
+    <div class="tab" data-scene="colleague">
+      <span class="algo">// no blame</span>
+      <div class="emo">💼</div><div class="t">同事/客户</div><div class="d">对事不对人，严防甩锅背黑锅</div>
     </div>
   </div>
 
@@ -257,13 +262,45 @@
 
 <script>
 /* ---------------- STATE ---------------- */
-const LEVELS = [
-  {label:"泛泛之交", sub:"150 人圈 · 客套 / 强边界感"},
-  {label:"一般朋友", sub:"50 人圈 · 日常 / 适度玩梗"},
-  {label:"核心密友", sub:"15 人圈 · 高信任 / 可互损"},
-  {label:"生死挚爱", sub:"5 人圈 · 极高亲密 / 深度卷入"},
-];
-let scene = "ambiguous";
+const DUNBAR_SLIDER_CONFIG = {
+  intimate: {
+    levels: ["雾里看花","上头期间","拉扯交替","命运绑定"],
+    tips: [
+      "刚加微信 · 朋友圈隔空点赞 · 礼貌克制",
+      "分享欲爆棚 · 深夜高频接梗 · 全盘兼容",
+      "忽冷忽热 · 试探性吃醋 · 潜台词冷战高发",
+      "绝对托底 · 毫无保留 · 精神上的终极伴侣"
+    ]
+  },
+  casual: {
+    levels: ["点头之交","日常搭子","人情世故","生死之交"],
+    tips: [
+      "老同学邻居 · 点赞式社交 · 维系面子工程",
+      "饭搭子/游戏搭子 · 轻松玩梗不走心",
+      "亲戚越界催婚 · 塑料朋友隐性阴阳怪气",
+      "核心铁磁闺蜜 · 无条件信任 · 共享底层秘密"
+    ]
+  },
+  authority: {
+    levels: ["职场新人","靠谱骨干","职场渡劫","嫡系盟友"],
+    tips: [
+      "处于观察期 · 摸不透脾气 · 谨言慎行立人设",
+      "成为执行主力 · 交流频繁 · 频繁承接核心压力",
+      "遭遇疯狂画大饼 · 领导甩锅或无理施压",
+      "进入权力核心圈 · 利益绑定 · 决定你的晋升"
+    ]
+  },
+  colleague: {
+    levels: ["跨部门/甲方","平级搭档","业务扯皮","战壕搭子"],
+    tips: [
+      "纯粹利益交换 · 沟通留存凭证 · 滴水不漏",
+      "同组低头不见抬头见 · 维系客套 · 绝不交浅言深",
+      "推诿排期 · 团队间甩锅 · 需要拿数据强硬推进",
+      "同阵线办公室死党 · 悄悄分享八卦 · 抱团吐槽"
+    ]
+  }
+};
+let scene = "intimate";
 let level = 1;
 let imageData = null;        // 压缩后 base64，用于展示
 let imageDataOcr = null;     // 原图 base64，用于 OCR
@@ -294,22 +331,28 @@ document.querySelectorAll('.tab').forEach(t=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
     t.classList.add('on');
     scene = t.dataset.scene;
+    syncSlider();
   };
 });
 
 /* ---------------- SLIDER ---------------- */
 const range=document.getElementById('level');
-const ticks=document.querySelectorAll('#ticks span');
-function syncLevel(){
-  level=+range.value;
-  const L=LEVELS[level-1];
-  document.getElementById('lvlLabel').textContent=L.label;
-  document.getElementById('lvlSub').textContent=L.sub;
-  document.getElementById('lvlNo').textContent=`LEVEL ${level} / 4`;
-  ticks.forEach((s,i)=>s.classList.toggle('on',i===level-1));
+
+function syncSlider(){
+  const cfg = DUNBAR_SLIDER_CONFIG[scene];
+  level = +range.value;
+  document.getElementById('lvlLabel').textContent = cfg.levels[level-1];
+  document.getElementById('lvlSub').textContent   = cfg.tips[level-1];
+  document.getElementById('lvlNo').textContent    = `LEVEL ${level} / 4`;
+  // 重新渲染 ticks
+  const ticksEl = document.getElementById('ticks');
+  ticksEl.innerHTML = cfg.levels.map((l,i)=>
+    `<span style="flex:1;text-align:center;color:${i===level-1?'#39FF14':'#555555'}">${l}</span>`
+  ).join('');
 }
-range.oninput=()=>{ if(!busy) syncLevel(); };
-syncLevel();
+
+range.oninput=()=>{ if(!busy) syncSlider(); };
+syncSlider();
 
 /* ---------------- IMAGE UPLOAD ---------------- */
 const drop=document.getElementById('drop');

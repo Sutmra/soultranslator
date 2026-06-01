@@ -157,12 +157,13 @@
   /* reply cards */
   .replies{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
   @media(max-width:600px){.replies{grid-template-columns:1fr;}}
-  .reply{background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:16px;position:relative;transition:.18s;}
+  .reply{background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:16px;padding-right:52px;position:relative;transition:.18s;}
   .reply:hover{border-color:#3a4049;transform:translateY(-2px);}
-  .reply .rl{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;margin-bottom:10px;padding-right:34px;}
+  .reply .rl{font-weight:700;font-size:14px;margin-bottom:10px;}
   .reply .rt{font-size:14px;line-height:1.65;color:var(--ink);white-space:pre-wrap;}
-  .reply .copy{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--muted);cursor:pointer;font-size:13px;transition:.15s;}
-  .reply .copy:hover{color:var(--acid);border-color:var(--acid);}
+  .reply .copy{position:absolute;top:12px;right:12px;width:36px;height:36px;min-width:36px;min-height:36px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0;}
+  .reply .copy:hover{color:var(--acid);border-color:var(--acid);background:rgba(199,245,58,.06);}
+  .reply .copy svg{width:16px;height:16px;stroke:currentColor;fill:none;flex-shrink:0;}
   .reply:nth-child(1){border-top:2px solid var(--cyan);}
   .reply:nth-child(2){border-top:2px solid var(--mag);}
   .reply:nth-child(3){border-top:2px solid var(--muted);}
@@ -626,7 +627,12 @@ function render(j){
     <div class="replies">
       ${reps.map((rp,i)=>`
         <div class="reply">
-          <button class="copy" data-i="${i}">📋</button>
+          <button class="copy" data-i="${i}" title="复制">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+            </svg>
+          </button>
           <div class="rl">${esc(rp.strategy||rp.label||'')}</div>
           <div class="rt" id="rt${i}">${esc(rp.content||rp.text||'')}</div>
         </div>`).join('')}

@@ -11,6 +11,21 @@ const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 
 app.get("/", (req, res) => res.json({ status: "SoulTranslator backend OK" }));
 
+// 调试：列出当前 KEY 可用的 Gemini 模型
+app.get("/api/models", async (req, res) => {
+  if (!GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`);
+    const data = await r.json();
+    const names = (data.models || [])
+      .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))
+      .map(m => m.name);
+    res.json({ usable: names, raw: data.error || undefined });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // DeepSeek 分析代理
 app.post("/api/chat", async (req, res) => {
   if (!DEEPSEEK_API_KEY) return res.status(500).json({ error: "DEEPSEEK_API_KEY not configured" });
@@ -34,7 +49,8 @@ app.post("/api/ocr", async (req, res) => {
   if (!imageData) return res.status(400).json({ error: "imageData required" });
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

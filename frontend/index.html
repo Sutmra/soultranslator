@@ -230,6 +230,7 @@
     <div class="ticks" id="ticks">
       <span class="on">泛泛之交</span><span>一般朋友</span><span>核心密友</span><span>生死挚爱</span>
     </div>
+    <div id="dunbarHint" style="margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.06em;text-align:center;">[ 邓巴容量：150人最外圈 ]</div>
   </div>
 
   <!-- STEP 3 INPUT -->
@@ -341,13 +342,15 @@ document.querySelectorAll('.tab').forEach(t=>{
 /* ---------------- SLIDER ---------------- */
 const range=document.getElementById('level');
 
+const DUNBAR_CAPACITY = ["150人最外圈","50人社交圈","15人核心圈","5人至亲圈"];
+
 function syncSlider(){
   const cfg = DUNBAR_SLIDER_CONFIG[scene];
   level = +range.value;
   document.getElementById('lvlLabel').textContent = cfg.levels[level-1];
   document.getElementById('lvlSub').textContent   = cfg.tips[level-1];
   document.getElementById('lvlNo').textContent    = `LEVEL ${level} / 4`;
-  // 重新渲染 ticks
+  document.getElementById('dunbarHint').textContent = `[ 邓巴容量：${DUNBAR_CAPACITY[level-1]} ]`;
   const ticksEl = document.getElementById('ticks');
   ticksEl.innerHTML = cfg.levels.map((l,i)=>
     `<span style="flex:1;text-align:center;color:${i===level-1?'#39FF14':'#555555'}">${l}</span>`
@@ -413,35 +416,66 @@ function toast(msg){
 
 /* ---------------- PROMPT ROUTING ---------------- */
 function buildPrompt(){
-  const sceneMap={
-    intimate:`【场景：恋爱/暧昧】启用「红绿灯算法」。重点判断对方对用户的真实兴趣与可得性测试，给出红/黄/绿灯评级与一个表白/推进的胜率百分比预测。`,
-    casual:`【场景：朋友/人情】启用「隐性攻击/阴阳怪气拆解」。重点识别表面客气下的隐性攻击、攀比、PUA 或绿茶话术，帮用户守住边界。`,
-    authority:`【场景：老板/导师】启用「向上管理算法」。重点识别职场PUA、画大饼、甩锅话术，帮用户高情商应对权力压迫，守住职场边界。`,
-    colleague:`【场景：同事/客户】启用「甩锅防御算法」。重点识别推诿、背黑锅风险与利益冲突，帮用户对事不对人、留存证据、强硬推进。`
-  };
   const cfg = DUNBAR_SLIDER_CONFIG[scene];
-  const L = { label: cfg.levels[level-1], sub: cfg.tips[level-1] };
-  return `你是「灵魂翻译器」，一个洞察人心的高情商社交军师，语气犀利、毒舌但精准，懂中文互联网语境与年轻人黑话。
+  const levelLabel = cfg.levels[level-1];
+  const levelTip   = cfg.tips[level-1];
+  const dunbarCap  = DUNBAR_CAPACITY[level-1];
 
-${sceneMap[scene]}
-【关系深度】第 ${level} 档：${L.label}（${L.sub}）。回复脚本的语气分寸必须严格匹配这个亲密度——越亲密越可以直接/撒娇/互损，越生疏越要客套/有边界感。
+  return `# Role
+你是由社会心理学家与顶级人际沟通专家联合打造的 AI 情绪翻译器——"SoulTranslator (V0.2 完全体)"。你的任务是帮助用户"看清局势，拒绝内耗，夺回聊天主动权"。
 
-请分析下面这段对方说的话（或聊天截图），剥离字面噪声和情绪伪装，输出底层真相。
+# 当前用户参数
+- 社交场域（scene_type）：${scene}
+- 关系深度（relationship_level）：LEVEL ${level} / 4 —— ${levelLabel}（${levelTip}）
+- 邓巴容量圈：${dunbarCap}
 
-严格只返回一个 JSON 对象，不要任何解释、不要 markdown 代码块。结构如下：
+# Core Framework: 邓巴数与社会场域联动矩阵
+
+## 恋爱/暧昧 (intimate)
+- LEVEL 1 雾里看花 → 150人最外圈：高情商克制，朦胧可得性，禁止暴露底牌
+- LEVEL 2 上头期间 → 50人社交圈：废话接梗、高频多巴胺情绪溢价
+- LEVEL 3 拉扯交替 → 15人核心圈：【核心内耗区】清醒军师视角，分析战术拉扯vs冷暴力，强情绪反拿捏
+- LEVEL 4 命运绑定 → 5人至亲圈：极度真诚直接，巩固安全感，过滤一切小花招
+
+## 朋友/人情 (casual)
+- LEVEL 1 点头之交 → 客套礼貌，两米安全边界
+- LEVEL 2 日常搭子 → 轻松玩梗，不走心
+- LEVEL 3 人情世故 → 防守手撕，体面拒绝，降维打击阴阳怪气
+- LEVEL 4 生死之交 → 绝对信任，情感托底
+
+## 老板/导师 (authority)
+- LEVEL 1 职场新人 → 极度敬业严谨，建立靠谱执行力人设
+- LEVEL 2 靠谱骨干 → 专业无瑕疵，展现担当同时守住边界
+- LEVEL 3 职场渡劫 → 高级太极话术，给足面子，优雅防御反PUA
+- LEVEL 4 嫡系盟友 → 战略同步感，站在领导视角协同
+
+## 同事/客户 (colleague)
+- LEVEL 1 跨部门/甲方 → 滴水不漏，留存合规凭证
+- LEVEL 2 平级搭档 → 对事不对人，绝不交浅言深
+- LEVEL 3 业务扯皮 → 拿数据和规范压人，有理有据免责
+- LEVEL 4 战壕搭子 → 允许私密放松，共享八卦，抱团吐槽
+
+# 输出规则
+严格只返回一个合法 JSON 对象，禁止任何 markdown 代码块或多余解释。结构如下：
 {
-  "facts": "剥离情绪后的客观事实，1-2句",
-  "motivation": "对方此刻真实的心理动机与防御机制，1-2句，要犀利",
-  "temperature": { "anxiety": 0-100的整数, "passive_aggression": 0-100的整数, "insecurity": 0-100的整数 },
-  ${scene==='ambiguous' ? `"traffic_light": { "color": "red|yellow|green 三选一", "rating": "状态评级短语，如『绿灯：双向奔赴』", "win_rate": "一句话胜率预测，带百分比，如『对方在测试你的可得性，推进胜率约 82%』" },` : ''}
-  "replies": [
-    { "label": "直球破壁 🚀", "text": "推进事件、明确表态的回复" },
-    { "label": "温柔共情 ❤️", "text": "向下兼容、提供情绪价值的回复" },
-    { "label": "体面退场 🛡️", "text": "客套、优雅收回情绪价值的回复" },
-    { "label": "反向拿捏 🎭", "text": "情绪拉扯/高级反问/防御性免责，夺回对话主动权的回复" }
+  "analysis": {
+    "fact": "剥离情绪噪声后的真实事实，1-2句，犀利直接",
+    "motivation": "对方当前的底层心理动机，1-2句，要毒舌精准",
+    "dunbar_audit": "📊 邓巴能量错位警告：基于用户选择的${dunbarCap}（LEVEL ${level}）与对方语义表现的圈层错位，给出一句直击灵魂的社交能量审计结论，建议用户采取哪张回复脚本",
+    "metrics": { "anxiety": 0到100整数, "passive_aggressive": 0到100整数, "insecurity": 0到100整数 }
+  },
+  "relationship_status": {
+    "light_color": "red或yellow或green三选一",
+    "status_title": "基于邓巴圈层错位的核心局势判定短语",
+    "winning_rate": "带%的胜率预测，如88%"
+  },
+  "reply_scripts": [
+    { "strategy": "直球推进 🚀", "content": "紧扣LEVEL ${level}分寸感的推进话术，60字内真人口吻" },
+    { "strategy": "温柔共情 ❤️", "content": "紧扣LEVEL ${level}分寸感的共情话术，60字内真人口吻" },
+    { "strategy": "反向拿捏 🎭", "content": "紧扣LEVEL ${level}分寸感的情绪太极/反拿捏话术，夺回主动权，60字内" },
+    { "strategy": "体面退场 🛡️", "content": "紧扣LEVEL ${level}分寸感的优雅收尾话术，60字内真人口吻" }
   ]
-}
-每条 reply.text 是可以直接复制发出去的真人口吻消息，控制在 60 字内，符合关系档位语气。`;
+}`;
 }
 
 /* ---------------- OCR (Gemini) ---------------- */
@@ -550,59 +584,55 @@ function setDisabled(d){
 /* ---------------- RENDER ---------------- */
 function render(j){
   const r=document.getElementById('results');
-  const t=j.temperature||{};
-  const tl=j.traffic_light;
-  const reps=j.replies||[];
+  const a=j.analysis||{};
+  const m=a.metrics||{};
+  const rs=j.relationship_status||{};
+  const reps=j.reply_scripts||[];
+  const c=(rs.light_color||'yellow').toLowerCase();
+  const emoji=c==='green'?'🟢':c==='red'?'🔴':'🟡';
 
   let html=`
   <!-- MODULE A -->
   <div class="card" style="animation-delay:.0s">
     <div class="ctitle">🪞 真心话照妖镜<span class="tag">MODULE A</span></div>
-    <div class="field"><div class="k">底层事实 / FACTS</div><div class="v">${esc(j.facts)}</div></div>
-    <div class="field motive"><div class="k">真实心理动机 / MOTIVE</div><div class="v">${esc(j.motivation)}</div></div>
+    <div class="field"><div class="k">底层事实 / FACTS</div><div class="v">${esc(a.fact||a.facts||'')}</div></div>
+    <div class="field motive"><div class="k">真实心理动机 / MOTIVE</div><div class="v">${esc(a.motivation||'')}</div></div>
+    ${a.dunbar_audit?`<div class="field" style="margin-bottom:16px"><div class="k">📊 邓巴能量审计 / DUNBAR AUDIT</div><div class="v" style="border-left-color:var(--cyan);font-size:13.5px;line-height:1.7">${esc(a.dunbar_audit)}</div></div>`:''}
     <div class="field" style="margin-bottom:0">
       <div class="k">情绪温度计 / THERMOMETER</div>
       <div class="temps">
-        ${tempBar("焦虑值",t.anxiety,"var(--cyan)")}
-        ${tempBar("隐性攻击 / 阴阳值",t.passive_aggression,"var(--mag)")}
-        ${tempBar("安全感缺乏度",t.insecurity,"var(--yellow)")}
+        ${tempBar("焦虑值",m.anxiety,"var(--cyan)")}
+        ${tempBar("隐性攻击 / 阴阳值",m.passive_aggressive||m.passive_aggression,"var(--mag)")}
+        ${tempBar("安全感缺乏度",m.insecurity,"var(--yellow)")}
       </div>
     </div>
-  </div>`;
+  </div>
 
-  // MODULE B only ambiguous
-  if(scene==='ambiguous' && tl){
-    const c=(tl.color||'yellow').toLowerCase();
-    const emoji=c==='green'?'🟢':c==='red'?'🔴':'🟡';
-    html+=`
-    <div class="card" style="animation-delay:.1s">
-      <div class="ctitle">🚦 关系走向诊断<span class="tag">MODULE B</span></div>
-      <div class="traffic">
-        <div class="badge-light ${c}">${emoji}</div>
-        <div class="info">
-          <div class="rating">${esc(tl.rating)}</div>
-          <div class="winrate">${esc(tl.win_rate)}</div>
-        </div>
+  <!-- MODULE B -->
+  <div class="card" style="animation-delay:.1s">
+    <div class="ctitle">🚦 关系走向诊断<span class="tag">MODULE B</span></div>
+    <div class="traffic">
+      <div class="badge-light ${c}">${emoji}</div>
+      <div class="info">
+        <div class="rating">${esc(rs.status_title||rs.rating||'')}</div>
+        <div class="winrate">胜率预测：<b>${esc(rs.winning_rate||rs.win_rate||'')}</b></div>
       </div>
-    </div>`;
-  }
+    </div>
+  </div>
 
-  // MODULE C replies
-  html+=`
+  <!-- MODULE C -->
   <div class="card" style="animation-delay:.18s">
     <div class="ctitle">🎤 高情商嘴替专区<span class="tag">MODULE C</span></div>
     <div class="replies">
       ${reps.map((rp,i)=>`
         <div class="reply">
           <button class="copy" data-i="${i}">📋</button>
-          <div class="rl">${esc(rp.label)}</div>
-          <div class="rt" id="rt${i}">${esc(rp.text)}</div>
+          <div class="rl">${esc(rp.strategy||rp.label||'')}</div>
+          <div class="rt" id="rt${i}">${esc(rp.content||rp.text||'')}</div>
         </div>`).join('')}
     </div>
-  </div>`;
+  </div>
 
-  // MODULE D poster
-  html+=`
   <div class="posterbar">
     <button class="poster-btn" id="posterBtn">📥 一键生成「人间清醒复盘卡」</button>
   </div>`;

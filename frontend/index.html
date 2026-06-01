@@ -83,7 +83,7 @@
   .sliderbox{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:20px;}
   .sliderhead{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
   .lvl-label{font-family:var(--disp);font-weight:700;font-size:20px;}
-  .lvl-sub{color:var(--mag);font-size:12px;font-family:var(--mono);letter-spacing:.04em;}
+  .lvl-sub{color:var(--mag);font-size:12px;font-family:var(--mono);letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
   input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:9px;background:linear-gradient(90deg,var(--mag),var(--acid));outline:none;margin:6px 0 4px;}
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid var(--bg);box-shadow:0 0 0 2px var(--acid),0 0 16px var(--acid);cursor:pointer;}
   input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--bg);box-shadow:0 0 0 2px var(--acid);cursor:pointer;}
@@ -268,37 +268,37 @@ const DUNBAR_SLIDER_CONFIG = {
   intimate: {
     levels: ["雾里看花","上头期间","拉扯交替","命运绑定"],
     tips: [
-      "刚加微信 · 朋友圈隔空点赞 · 礼貌克制",
-      "分享欲爆棚 · 深夜高频接梗 · 全盘兼容",
-      "忽冷忽热 · 试探性吃醋 · 潜台词冷战高发",
-      "绝对托底 · 毫无保留 · 精神上的终极伴侣"
+      "刚加微信 · 朋友圈点赞试探",
+      "分享欲爆棚 · 深夜高频接梗",
+      "忽冷忽热 · 试探吃醋内耗高发",
+      "绝对托底 · 毫无保留的终极伴侣"
     ]
   },
   casual: {
     levels: ["点头之交","日常搭子","人情世故","生死之交"],
     tips: [
-      "老同学邻居 · 点赞式社交 · 维系面子工程",
-      "饭搭子/游戏搭子 · 轻松玩梗不走心",
-      "亲戚越界催婚 · 塑料朋友隐性阴阳怪气",
-      "核心铁磁闺蜜 · 无条件信任 · 共享底层秘密"
+      "同学邻居 · 点赞式社交客套",
+      "饭搭子/同好 · 轻松玩梗不走心",
+      "亲戚越界催婚 · 塑料朋友隐性阴阳",
+      "铁磁闺蜜 · 无条件信任共享秘密"
     ]
   },
   authority: {
     levels: ["职场新人","靠谱骨干","职场渡劫","嫡系盟友"],
     tips: [
-      "处于观察期 · 摸不透脾气 · 谨言慎行立人设",
-      "成为执行主力 · 交流频繁 · 频繁承接核心压力",
-      "遭遇疯狂画大饼 · 领导甩锅或无理施压",
-      "进入权力核心圈 · 利益绑定 · 决定你的晋升"
+      "处于观察期 · 谨言慎行立人设",
+      "核心执行主力 · 频繁承接业务压力",
+      "领导画大饼 · 直面甩锅与无理施压",
+      "进入权力核心圈 · 深度绑定晋升"
     ]
   },
   colleague: {
     levels: ["跨部门/甲方","平级搭档","业务扯皮","战壕搭子"],
     tips: [
-      "纯粹利益交换 · 沟通留存凭证 · 滴水不漏",
-      "同组低头不见抬头见 · 维系客套 · 绝不交浅言深",
-      "推诿排期 · 团队间甩锅 · 需要拿数据强硬推进",
-      "同阵线办公室死党 · 悄悄分享八卦 · 抱团吐槽"
+      "纯利益交换 · 沟通滴水不漏留凭证",
+      "低头不见抬头见 · 维系客套不交深",
+      "排期推诿 · 团队甩锅需硬核推进",
+      "办公室死党 · 悄悄分享八卦抱团吐槽"
     ]
   }
 };

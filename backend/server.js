@@ -42,7 +42,7 @@ app.post("/api/ocr", async (req, res) => {
         contents: [{
           parts: [
             { inline_data: { mime_type: mimeType || "image/jpeg", data: imageData } },
-            { text: "这是一张聊天截图。请只提取其中的对话文字内容，按时间顺序输出，格式为「发送方：内容」。如果图片里没有聊天对话，只回复：NOT_CHAT" }
+            { text: "请仔细查看这张图片，它可能是聊天截图、手机屏幕照片、或截图的截图。请找出图中所有聊天气泡里的文字，按顺序提取对话内容，格式为「A：内容 / B：内容」。只输出对话文字，不要描述图片。如果完全没有任何聊天文字，只回复：NOT_CHAT" }
           ]
         }],
         generationConfig: { temperature: 0, maxOutputTokens: 512 }

@@ -265,7 +265,8 @@ const LEVELS = [
 ];
 let scene = "ambiguous";
 let level = 1;
-let imageData = null;        // base64 (no prefix)
+let imageData = null;        // 压缩后 base64，用于展示
+let imageDataOcr = null;     // 原图 base64，用于 OCR
 let imageMime = null;
 let busy = false;
 
@@ -326,12 +327,15 @@ function handleFile(f){
   const reader=new FileReader();
   reader.onload=async()=>{
     const original=reader.result;
+    const originalBase64=original.split(',')[1];
+    // 原图给 OCR（保持清晰度），压缩图给缩略图展示
+    imageDataOcr=originalBase64;
+    imageMime=f.type;
     toast("正在压缩图片…");
-    const {data,mime}=await compressImage(original.split(',')[1], f.type);
+    const {data,mime}=await compressImage(originalBase64, f.type);
     imageData=data;
-    imageMime=mime;
     thumbBox.innerHTML=`<div class="thumb"><img src="data:${mime};base64,${data}"><button class="x" id="rmImg">×</button></div>`;
-    document.getElementById('rmImg').onclick=()=>{ imageData=null;imageMime=null;thumbBox.innerHTML='';fileInput.value=''; };
+    document.getElementById('rmImg').onclick=()=>{ imageData=null;imageDataOcr=null;imageMime=null;thumbBox.innerHTML='';fileInput.value=''; };
   };
   reader.readAsDataURL(f);
 }
@@ -427,7 +431,7 @@ async function decode(){
     let finalText = text;
     if(imageData){
       btn.querySelector('span').textContent="正在识别截图文字…";
-      const ocrText = await ocrImage(imageData, imageMime);
+      const ocrText = await ocrImage(imageDataOcr, imageMime);
       if(ocrText === "NOT_CHAT" || ocrText.length < 5){
         if(text){
           toast("截图未识别到对话，仅分析文字输入");

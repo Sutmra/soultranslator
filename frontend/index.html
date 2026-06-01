@@ -91,10 +91,10 @@
     input[type=range]::-webkit-slider-thumb{width:30px;height:30px;}
     input[type=range]::-moz-range-thumb{width:26px;height:26px;}
   }
-  .slider-wrap{position:relative;margin-bottom:36px;}
+  .slider-wrap{position:relative;}
   .slider-tooltip{
     position:absolute;
-    top:calc(100% + 10px);
+    bottom:calc(100% + 12px);
     transform:translateX(-50%);
     background:var(--panel-2);
     border:1px solid var(--acid);
@@ -105,20 +105,21 @@
     color:var(--acid);
     white-space:nowrap;
     pointer-events:none;
+    z-index:10;
     transition:left .12s ease;
     box-shadow:0 0 10px rgba(199,245,58,.25);
   }
-  .slider-tooltip::before{
+  .slider-tooltip::after{
     content:"";
     position:absolute;
-    bottom:100%;
+    top:100%;
     left:50%;
     transform:translateX(-50%);
     border:5px solid transparent;
-    border-bottom-color:var(--acid);
+    border-top-color:var(--acid);
   }
   @media(max-width:640px){
-    .slider-tooltip{top:calc(100% + 14px);font-size:12px;padding:5px 14px;}
+    .slider-tooltip{bottom:calc(100% + 16px);font-size:12px;padding:5px 14px;}
   }
 
   /* ---------- INPUT ---------- */
@@ -252,8 +253,8 @@
   <div class="sliderbox" style="position:relative;">
     <!-- LEVEL 标签：绝对定位钉死右上角，完全脱离文本流 -->
     <div id="lvlNo" style="position:absolute;top:20px;right:20px;font-family:var(--mono);font-size:12px;color:var(--dim);z-index:10;white-space:nowrap;">LEVEL 1 / 4</div>
-    <!-- 左侧文本区：加右侧内边距防止侵入 LEVEL 标签领地 -->
-    <div style="padding-right:5.5rem;margin-bottom:16px;">
+    <!-- 左侧文本区：右侧 96px 隔离带防撞 LEVEL 标签；底部 56px 高空给气泡漂浮 -->
+    <div style="padding-right:6rem;margin-bottom:56px;">
       <div class="lvl-label" id="lvlLabel">雾里看花</div>
       <div class="lvl-sub" id="lvlSub">刚加微信 · 朋友圈隔空点赞 · 礼貌克制</div>
     </div>
@@ -261,7 +262,7 @@
       <div class="slider-tooltip" id="sliderTooltip">雾里看花</div>
       <input type="range" id="level" min="1" max="4" step="1" value="1">
     </div>
-    <div id="dunbarHint" style="margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.06em;text-align:center;">[ 邓巴容量：150人最外圈 ]</div>
+    <div id="dunbarHint" style="margin-top:16px;font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.06em;text-align:center;">[ 邓巴容量：150人最外圈 ]</div>
   </div>
 
   <!-- STEP 3 INPUT -->

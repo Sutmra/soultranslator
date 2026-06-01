@@ -307,6 +307,9 @@ let imageDataOcr = null;     // 原图 base64，用于 OCR
 let imageMime = null;
 let busy = false;
 
+/* ---------------- WARMUP ---------------- */
+fetch("https://soultranslator-backend.onrender.com").catch(()=>{});
+
 /* ================= API CONFIG =================
  * 现在通过你自己的后端代理调用，前端不再放真实 KEY，也不再有 CORS 问题。
  *

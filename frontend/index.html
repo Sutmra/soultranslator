@@ -3,9 +3,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>SoulTranslator · 灵魂翻译器</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Noto+Sans+SC:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
@@ -394,12 +392,16 @@ ${sceneMap[scene]}
 每条 reply.text 是可以直接复制发出去的真人口吻消息，控制在 60 字内，符合关系档位语气。`;
 }
 
-/* ---------------- OCR ---------------- */
-async function ocrImage(dataUrl){
-  const result = await Tesseract.recognize(dataUrl, 'chi_sim+eng', {
-    logger: ()=>{}
+/* ---------------- OCR (Gemini) ---------------- */
+async function ocrImage(base64, mime){
+  const resp = await fetch(CONFIG.API_BASE.replace('/api/chat','/api/ocr'), {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ imageData: base64, mimeType: mime })
   });
-  return result.data.text.trim().replace(/\n{3,}/g,'\n\n');
+  const data = await resp.json();
+  if(!resp.ok) throw new Error(data.error || "OCR 服务异常");
+  return (data.text || "").trim();
 }
 
 /* ---------------- API CALL ---------------- */
@@ -421,21 +423,16 @@ async function decode(){
   let pi=0, phraseTimer;
 
   try{
-    // 有图时先 OCR 提取文字，并校验是否像对话内容
+    // 有图时先用 Gemini OCR 提取对话文字
     let finalText = text;
     if(imageData){
       btn.querySelector('span').textContent="正在识别截图文字…";
-      const ocrText = await ocrImage(`data:${imageMime};base64,${imageData}`);
-      const cleaned = ocrText.replace(/\s/g,'');
-      // 少于 8 个有效字符、或明显不含中文/常见对话字符，视为无效
-      const hasChinese = /[一-龥]/.test(ocrText);
-      const hasEnoughText = cleaned.length >= 8;
-      if(!hasEnoughText || !hasChinese){
+      const ocrText = await ocrImage(imageData, imageMime);
+      if(ocrText === "NOT_CHAT" || ocrText.length < 5){
         if(text){
-          // 有手动输入文字就忽略图片，继续用文字分析
           toast("截图未识别到对话，仅分析文字输入");
         } else {
-          throw new Error("截图里没有识别到对话内容，请上传聊天截图，或手动粘贴对话文字");
+          throw new Error("图片里没有聊天对话，请上传微信/其他 App 的聊天截图");
         }
       } else {
         finalText = text ? `${text}\n\n【截图识别内容】\n${ocrText}` : ocrText;

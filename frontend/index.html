@@ -4,6 +4,7 @@
 <title>SoulTranslator · 灵魂翻译器</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Noto+Sans+SC:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -282,10 +283,9 @@ let busy = false;
  *      http://localhost:8787/api/chat
  */
 const CONFIG = {
-  API_BASE:       "https://soultranslator-backend.onrender.com/api/chat",
-  API_KEY:        "",
-  MODEL_TEXT:     "deepseek-chat",
-  MODEL_VISION:   "deepseek-vl2",
+  API_BASE:   "https://soultranslator-backend.onrender.com/api/chat",
+  API_KEY:    "",
+  MODEL:      "deepseek-chat",
 };
 
 /* ---------------- TABS ---------------- */
@@ -394,6 +394,14 @@ ${sceneMap[scene]}
 每条 reply.text 是可以直接复制发出去的真人口吻消息，控制在 60 字内，符合关系档位语气。`;
 }
 
+/* ---------------- OCR ---------------- */
+async function ocrImage(dataUrl){
+  const result = await Tesseract.recognize(dataUrl, 'chi_sim+eng', {
+    logger: ()=>{}
+  });
+  return result.data.text.trim().replace(/\n{3,}/g,'\n\n');
+}
+
 /* ---------------- API CALL ---------------- */
 async function decode(){
   const text=document.getElementById('text').value.trim();
@@ -406,36 +414,39 @@ async function decode(){
   document.getElementById('results').innerHTML='';
   setDisabled(true);
 
-  const phrases=["正在剥离情绪伪装…","正在看穿底层逻辑…","正在计算关系胜率…","正在生成嘴替脚本…"];
-  let pi=0;
   btn.classList.add('loading');
-  btn.innerHTML=`<span style="display:inline-flex;align-items:center;gap:8px">${phrases[0]}</span><span class="scan"></span>`;
-  const phraseTimer=setInterval(()=>{
-    pi=(pi+1)%phrases.length;
-    btn.querySelector('span').textContent=phrases[pi];
-  },1400);
+  btn.innerHTML=`<span style="display:inline-flex;align-items:center;gap:8px">正在剥离情绪伪装…</span><span class="scan"></span>`;
+
+  const phrases=["正在看穿底层逻辑…","正在计算关系胜率…","正在生成嘴替脚本…"];
+  let pi=0, phraseTimer;
 
   try{
+    // 有图时先 OCR 提取文字
+    let finalText = text;
+    if(imageData){
+      btn.querySelector('span').textContent="正在识别截图文字…";
+      const ocrText = await ocrImage(`data:${imageMime};base64,${imageData}`);
+      if(!ocrText && !text){ throw new Error("截图文字识别失败，请手动粘贴对话文字"); }
+      finalText = text ? `${text}\n\n【截图识别内容】\n${ocrText}` : ocrText;
+    }
+
+    btn.querySelector('span').textContent=phrases[0];
+    phraseTimer=setInterval(()=>{
+      pi=(pi+1)%phrases.length;
+      btn.querySelector('span').textContent=phrases[pi];
+    },1400);
+
     const headers={"Content-Type":"application/json"};
     if(CONFIG.API_KEY) headers["Authorization"]="Bearer "+CONFIG.API_KEY;
-
-    // 有图片时用视觉模型，消息内容包含图片
-    const useVision = !!imageData;
-    const userContent = useVision
-      ? [
-          {type:"image_url", image_url:{url:`data:${imageMime};base64,${imageData}`}},
-          {type:"text", text:`【对方说的话 / 聊天截图内容】：${text||"请识别图中所有聊天内容后进行分析"}`}
-        ]
-      : `【对方说的话】：${text}`;
 
     const resp=await fetch(CONFIG.API_BASE,{
       method:"POST",
       headers,
       body:JSON.stringify({
-        model: useVision ? CONFIG.MODEL_VISION : CONFIG.MODEL_TEXT,
+        model: CONFIG.MODEL,
         messages:[
           {role:"system",content:buildPrompt()},
-          {role:"user",content:userContent}
+          {role:"user",content:`【对方说的话】：${finalText}`}
         ],
         temperature:1.0,
         max_tokens:1500,

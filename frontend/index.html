@@ -421,13 +421,25 @@ async function decode(){
   let pi=0, phraseTimer;
 
   try{
-    // 有图时先 OCR 提取文字
+    // 有图时先 OCR 提取文字，并校验是否像对话内容
     let finalText = text;
     if(imageData){
       btn.querySelector('span').textContent="正在识别截图文字…";
       const ocrText = await ocrImage(`data:${imageMime};base64,${imageData}`);
-      if(!ocrText && !text){ throw new Error("截图文字识别失败，请手动粘贴对话文字"); }
-      finalText = text ? `${text}\n\n【截图识别内容】\n${ocrText}` : ocrText;
+      const cleaned = ocrText.replace(/\s/g,'');
+      // 少于 8 个有效字符、或明显不含中文/常见对话字符，视为无效
+      const hasChinese = /[一-龥]/.test(ocrText);
+      const hasEnoughText = cleaned.length >= 8;
+      if(!hasEnoughText || !hasChinese){
+        if(text){
+          // 有手动输入文字就忽略图片，继续用文字分析
+          toast("截图未识别到对话，仅分析文字输入");
+        } else {
+          throw new Error("截图里没有识别到对话内容，请上传聊天截图，或手动粘贴对话文字");
+        }
+      } else {
+        finalText = text ? `${text}\n\n【截图识别内容】\n${ocrText}` : ocrText;
+      }
     }
 
     btn.querySelector('span').textContent=phrases[0];

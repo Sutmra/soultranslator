@@ -87,9 +87,39 @@
   input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:9px;background:linear-gradient(90deg,var(--mag),var(--acid));outline:none;margin:6px 0 4px;}
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid var(--bg);box-shadow:0 0 0 2px var(--acid),0 0 16px var(--acid);cursor:pointer;}
   input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--bg);box-shadow:0 0 0 2px var(--acid);cursor:pointer;}
-  .ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:8px;}
-  .ticks span{flex:1;text-align:center;}
-  .ticks span.on{color:var(--acid);}
+  @media(max-width:640px){
+    input[type=range]::-webkit-slider-thumb{width:30px;height:30px;}
+    input[type=range]::-moz-range-thumb{width:26px;height:26px;}
+  }
+  .slider-wrap{position:relative;margin-bottom:36px;}
+  .slider-tooltip{
+    position:absolute;
+    top:calc(100% + 10px);
+    transform:translateX(-50%);
+    background:var(--panel-2);
+    border:1px solid var(--acid);
+    border-radius:999px;
+    padding:4px 12px;
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--acid);
+    white-space:nowrap;
+    pointer-events:none;
+    transition:left .12s ease;
+    box-shadow:0 0 10px rgba(199,245,58,.25);
+  }
+  .slider-tooltip::before{
+    content:"";
+    position:absolute;
+    bottom:100%;
+    left:50%;
+    transform:translateX(-50%);
+    border:5px solid transparent;
+    border-bottom-color:var(--acid);
+  }
+  @media(max-width:640px){
+    .slider-tooltip{top:calc(100% + 14px);font-size:12px;padding:5px 14px;}
+  }
 
   /* ---------- INPUT ---------- */
   .inputgrid{display:grid;grid-template-columns:1fr;gap:14px;}
@@ -227,9 +257,9 @@
       <div class="lvl-label" id="lvlLabel">雾里看花</div>
       <div class="lvl-sub" id="lvlSub">刚加微信 · 朋友圈隔空点赞 · 礼貌克制</div>
     </div>
-    <input type="range" id="level" min="1" max="4" step="1" value="1">
-    <div class="ticks" id="ticks">
-      <span class="on">雾里看花</span><span>上头期间</span><span>拉扯交替</span><span>命运绑定</span>
+    <div class="slider-wrap">
+      <div class="slider-tooltip" id="sliderTooltip">雾里看花</div>
+      <input type="range" id="level" min="1" max="4" step="1" value="1">
     </div>
     <div id="dunbarHint" style="margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.06em;text-align:center;">[ 邓巴容量：150人最外圈 ]</div>
   </div>
@@ -345,6 +375,17 @@ const range=document.getElementById('level');
 
 const DUNBAR_CAPACITY = ["150人最外圈","50人社交圈","15人核心圈","5人至亲圈"];
 
+function updateTooltipPos(){
+  const min=+range.min, max=+range.max, val=+range.value;
+  const percentage=(val-min)/(max-min);
+  const thumbRadius=11; // half of 22px thumb
+  const tooltip=document.getElementById('sliderTooltip');
+  const trackWidth=range.offsetWidth;
+  // anti-overflow correction: thumb edge pulls inward at extremes
+  const px=percentage*trackWidth - (percentage-0.5)*thumbRadius*2;
+  tooltip.style.left=px+'px';
+}
+
 function syncSlider(){
   const cfg = DUNBAR_SLIDER_CONFIG[scene];
   level = +range.value;
@@ -352,13 +393,12 @@ function syncSlider(){
   document.getElementById('lvlSub').textContent   = cfg.tips[level-1];
   document.getElementById('lvlNo').textContent    = `LEVEL ${level} / 4`;
   document.getElementById('dunbarHint').textContent = `[ 邓巴容量：${DUNBAR_CAPACITY[level-1]} ]`;
-  const ticksEl = document.getElementById('ticks');
-  ticksEl.innerHTML = cfg.levels.map((l,i)=>
-    `<span style="flex:1;text-align:center;color:${i===level-1?'#39FF14':'#555555'}">${l}</span>`
-  ).join('');
+  document.getElementById('sliderTooltip').textContent = cfg.levels[level-1];
+  updateTooltipPos();
 }
 
 range.oninput=()=>{ if(!busy) syncSlider(); };
+window.addEventListener('resize', updateTooltipPos);
 syncSlider();
 
 /* ---------------- IMAGE UPLOAD ---------------- */

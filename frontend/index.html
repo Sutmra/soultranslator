@@ -218,17 +218,17 @@
 
   <!-- STEP 2 RELATIONSHIP -->
   <div class="step"><span class="no">02</span><h2>关系深度</h2><span class="hint">DUNBAR ×4</span></div>
-  <div class="sliderbox">
-    <div class="sliderhead">
-      <div>
-        <div class="lvl-label" id="lvlLabel">泛泛之交</div>
-        <div class="lvl-sub" id="lvlSub">150 人圈 · 客套 / 强边界感</div>
-      </div>
-      <div class="lvl-sub" style="color:var(--dim)" id="lvlNo">LEVEL 1 / 4</div>
+  <div class="sliderbox" style="position:relative;">
+    <!-- LEVEL 标签：绝对定位钉死右上角，完全脱离文本流 -->
+    <div id="lvlNo" style="position:absolute;top:20px;right:20px;font-family:var(--mono);font-size:12px;color:var(--dim);z-index:10;white-space:nowrap;">LEVEL 1 / 4</div>
+    <!-- 左侧文本区：加右侧内边距防止侵入 LEVEL 标签领地 -->
+    <div style="padding-right:5.5rem;margin-bottom:16px;">
+      <div class="lvl-label" id="lvlLabel">雾里看花</div>
+      <div class="lvl-sub" id="lvlSub">刚加微信 · 朋友圈隔空点赞 · 礼貌克制</div>
     </div>
     <input type="range" id="level" min="1" max="4" step="1" value="1">
     <div class="ticks" id="ticks">
-      <span class="on">泛泛之交</span><span>一般朋友</span><span>核心密友</span><span>生死挚爱</span>
+      <span class="on">雾里看花</span><span>上头期间</span><span>拉扯交替</span><span>命运绑定</span>
     </div>
     <div id="dunbarHint" style="margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.06em;text-align:center;">[ 邓巴容量：150人最外圈 ]</div>
   </div>

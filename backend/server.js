@@ -49,7 +49,11 @@ app.post("/api/ocr", async (req, res) => {
       }),
     });
     const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+    if (!data.candidates || data.candidates.length === 0) {
+      const msg = data.error?.message || JSON.stringify(data).slice(0,200);
+      return res.status(500).json({ error: "Gemini API error: " + msg });
+    }
+    const text = data.candidates[0]?.content?.parts?.[0]?.text?.trim() || "";
     res.json({ text });
   } catch (err) {
     res.status(500).json({ error: err.message });

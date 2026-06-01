@@ -282,9 +282,10 @@ let busy = false;
  *      http://localhost:8787/api/chat
  */
 const CONFIG = {
-  API_BASE: "https://soultranslator-backend.onrender.com/api/chat",
-  API_KEY:  "",
-  MODEL:    "deepseek-chat"
+  API_BASE:       "https://soultranslator-backend.onrender.com/api/chat",
+  API_KEY:        "",
+  MODEL_TEXT:     "deepseek-chat",
+  MODEL_VISION:   "deepseek-vl2",
 };
 
 /* ---------------- TABS ---------------- */
@@ -323,16 +324,34 @@ fileInput.onchange=()=>{ if(fileInput.files[0]) handleFile(fileInput.files[0]); 
 
 function handleFile(f){
   if(!/image\/(png|jpeg)/.test(f.type)){ toast("只支持 jpg / png 图片"); return; }
-  if(f.size>5*1024*1024){ toast("图片不能超过 5MB"); return; }
+  if(f.size>10*1024*1024){ toast("图片不能超过 10MB"); return; }
   const reader=new FileReader();
-  reader.onload=()=>{
-    const url=reader.result;
-    imageData=url.split(',')[1];
-    imageMime=f.type;
-    thumbBox.innerHTML=`<div class="thumb"><img src="${url}"><button class="x" id="rmImg">×</button></div>`;
+  reader.onload=async()=>{
+    const original=reader.result;
+    toast("正在压缩图片…");
+    const {data,mime}=await compressImage(original.split(',')[1], f.type);
+    imageData=data;
+    imageMime=mime;
+    thumbBox.innerHTML=`<div class="thumb"><img src="data:${mime};base64,${data}"><button class="x" id="rmImg">×</button></div>`;
     document.getElementById('rmImg').onclick=()=>{ imageData=null;imageMime=null;thumbBox.innerHTML='';fileInput.value=''; };
   };
   reader.readAsDataURL(f);
+}
+
+async function compressImage(base64, mime, maxPx=720, quality=0.65){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const scale=Math.min(1, maxPx/Math.max(img.width,img.height));
+      const canvas=document.createElement('canvas');
+      canvas.width=Math.round(img.width*scale);
+      canvas.height=Math.round(img.height*scale);
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      const out=canvas.toDataURL('image/jpeg', quality);
+      resolve({data:out.split(',')[1], mime:'image/jpeg'});
+    };
+    img.src=`data:${mime};base64,${base64}`;
+  });
 }
 
 /* ---------------- TOAST ---------------- */
@@ -379,8 +398,6 @@ ${sceneMap[scene]}
 async function decode(){
   const text=document.getElementById('text').value.trim();
   if(!text && !imageData){ toast("请先输入文字或上传聊天截图"); return; }
-  // DeepSeek 纯文本模型无法识图：只有图没有文字时拦截
-  if(!text && imageData){ toast("DeepSeek 文本模型暂不能识图，请把对话文字粘进来"); return; }
 
   busy=true;
   const btn=document.getElementById('go');
@@ -401,14 +418,24 @@ async function decode(){
   try{
     const headers={"Content-Type":"application/json"};
     if(CONFIG.API_KEY) headers["Authorization"]="Bearer "+CONFIG.API_KEY;
+
+    // 有图片时用视觉模型，消息内容包含图片
+    const useVision = !!imageData;
+    const userContent = useVision
+      ? [
+          {type:"image_url", image_url:{url:`data:${imageMime};base64,${imageData}`}},
+          {type:"text", text:`【对方说的话 / 聊天截图内容】：${text||"请识别图中所有聊天内容后进行分析"}`}
+        ]
+      : `【对方说的话】：${text}`;
+
     const resp=await fetch(CONFIG.API_BASE,{
       method:"POST",
       headers,
       body:JSON.stringify({
-        model:CONFIG.MODEL,
+        model: useVision ? CONFIG.MODEL_VISION : CONFIG.MODEL_TEXT,
         messages:[
           {role:"system",content:buildPrompt()},
-          {role:"user",content:`【对方说的话】：${text}`}
+          {role:"user",content:userContent}
         ],
         temperature:1.0,
         max_tokens:1500,

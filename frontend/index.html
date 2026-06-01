@@ -219,7 +219,7 @@
 
   <!-- HERO -->
   <header>
-    <span class="badge"><span class="dot"></span>AI EMOTIONAL FORENSICS · V0.2<span style="color:var(--dim);margin:0 2px;">│</span>VIEWS <span style="color:var(--acid);font-weight:700;">12.8K</span></span>
+    <span class="badge"><span class="dot"></span>AI EMOTIONAL FORENSICS · V0.2<span style="color:var(--dim);margin:0 2px;">│</span>VIEWS <span id="viewCount" style="color:var(--acid);font-weight:700;">—</span></span>
     <h1><em>Soul</em>Translator<span class="cn">灵魂翻译器</span></h1>
     <p class="tagline">剥离对话里的<b>阴阳怪气</b>与字面噪声，还原对方的<b>真实意图</b>与<b>心理动机</b>，给你 4 套高情商回复脚本。<br>拒绝精神内耗，把聊天主动权拿回来。</p>
     <p class="intl">DECODE WHAT THEY <span style="color:var(--mag)">REALLY</span> MEAN · STOP OVERTHINKING · WIN THE CHAT</p>
@@ -342,6 +342,21 @@ let busy = false;
 
 /* ---------------- WARMUP ---------------- */
 fetch("https://soultranslator-backend.onrender.com").catch(()=>{});
+
+/* ---------------- VIEW COUNTER ---------------- */
+(function(){
+  const BASE = "https://soultranslator-backend.onrender.com";
+  const el = () => document.getElementById('viewCount');
+  const fmt = n => n >= 1000 ? (n/1000).toFixed(1).replace(/\.0$/,'') + 'K' : String(n);
+  const show = n => { const e = el(); if(e && Number.isFinite(n)) e.textContent = fmt(n); };
+  // 每个浏览器会话只 +1 一次，刷新不重复计数
+  const counted = sessionStorage.getItem('st_viewed');
+  const method = counted ? 'GET' : 'POST';
+  fetch(`${BASE}/api/views`, { method })
+    .then(r => r.json())
+    .then(d => { show(d.count); if(!counted) sessionStorage.setItem('st_viewed','1'); })
+    .catch(()=>{});
+})();
 
 /* ================= API CONFIG =================
  * 现在通过你自己的后端代理调用，前端不再放真实 KEY，也不再有 CORS 问题。

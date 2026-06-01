@@ -9,7 +9,42 @@ const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const GEMINI_API_KEY   = process.env.GEMINI_API_KEY;
 const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 
+// Upstash Redis (REST) —— 持久化浏览量计数
+const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const VIEW_KEY = "soultranslator:views";
+
+async function redis(...cmd) {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) throw new Error("Upstash not configured");
+  const r = await fetch(`${UPSTASH_URL}/${cmd.map(encodeURIComponent).join("/")}`, {
+    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+  });
+  const data = await r.json();
+  if (data.error) throw new Error(data.error);
+  return data.result;
+}
+
 app.get("/", (req, res) => res.json({ status: "SoulTranslator backend OK" }));
+
+// 浏览量：读取当前值
+app.get("/api/views", async (req, res) => {
+  try {
+    const count = await redis("get", VIEW_KEY);
+    res.json({ count: Number(count) || 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 浏览量：+1 并返回最新值（前端每个会话只调一次）
+app.post("/api/views", async (req, res) => {
+  try {
+    const count = await redis("incr", VIEW_KEY);
+    res.json({ count: Number(count) || 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // 调试：列出当前 KEY 可用的 Gemini 模型
 app.get("/api/models", async (req, res) => {

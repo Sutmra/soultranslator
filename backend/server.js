@@ -13,6 +13,7 @@ const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 const VIEW_KEY = "soultranslator:views";
+const VIEW_BASE = Number(process.env.VIEW_BASE || 66); // 展示基数偏移：真实计数 2 + 66 = 起步 68
 
 async function redis(...cmd) {
   if (!UPSTASH_URL || !UPSTASH_TOKEN) throw new Error("Upstash not configured");
@@ -30,7 +31,7 @@ app.get("/", (req, res) => res.json({ status: "SoulTranslator backend OK" }));
 app.get("/api/views", async (req, res) => {
   try {
     const count = await redis("get", VIEW_KEY);
-    res.json({ count: Number(count) || 0 });
+    res.json({ count: (Number(count) || 0) + VIEW_BASE });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -40,7 +41,7 @@ app.get("/api/views", async (req, res) => {
 app.post("/api/views", async (req, res) => {
   try {
     const count = await redis("incr", VIEW_KEY);
-    res.json({ count: Number(count) || 0 });
+    res.json({ count: (Number(count) || 0) + VIEW_BASE });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

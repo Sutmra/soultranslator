@@ -1,7 +1,7 @@
-<!-- SoulTranslator 灵魂翻译器 — MVP single page -->
+<!-- SoulTranslator 灵魂翻译官 — MVP single page -->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>SoulTranslator · 灵魂翻译器</title>
+<title>SoulTranslator · 灵魂翻译官</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script><link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -220,7 +220,7 @@
   <!-- HERO -->
   <header>
     <span class="badge"><span class="dot"></span>AI EMOTIONAL FORENSICS · V0.2<span style="color:var(--dim);margin:0 2px;">│</span>VIEWS <span id="viewCount" style="color:var(--acid);font-weight:700;">—</span></span>
-    <h1><em>Soul</em>Translator<span class="cn">灵魂翻译器</span></h1>
+    <h1><em>Soul</em>Translator<span class="cn">灵魂翻译官</span></h1>
     <p class="tagline">剥离对话里的<b>阴阳怪气</b>与字面噪声，还原对方的<b>真实意图</b>与<b>心理动机</b>，给你 4 套高情商回复脚本。<br>拒绝精神内耗，把聊天主动权拿回来。</p>
     <p class="intl">DECODE WHAT THEY <span style="color:var(--mag)">REALLY</span> MEAN · STOP OVERTHINKING · WIN THE CHAT</p>
   </header>
@@ -286,7 +286,7 @@
   <div id="results"></div>
 
   <footer>
-    SOULTRANSLATOR · 灵魂翻译器<br>
+    SOULTRANSLATOR · 灵魂翻译官<br>
     本工具输出仅供情绪参考与娱乐 · 真实关系请用真心经营 ✦
   </footer>
 </div>
@@ -757,14 +757,14 @@ async function makePoster(){
   });
   const foot=document.createElement('div');
   foot.style.cssText="margin-top:22px;text-align:center;font-family:'Space Mono',monospace;font-size:10px;color:#5a616b;letter-spacing:.1em";
-  foot.textContent="DECODED BY SOULTRANSLATOR · 灵魂翻译器 · 拒绝内耗 ✦";
+  foot.textContent="DECODED BY SOULTRANSLATOR · 灵魂翻译官 · 拒绝内耗 ✦";
   stage.appendChild(foot);
   document.body.appendChild(stage);
 
   try{
     const canvas=await html2canvas(stage,{backgroundColor:'#08090b',scale:2,useCORS:true});
     const link=document.createElement('a');
-    link.download='灵魂翻译器-复盘卡.png';
+    link.download='灵魂翻译官-复盘卡.png';
     link.href=canvas.toDataURL('image/png');
     link.click();
     toast("复盘卡已保存！");

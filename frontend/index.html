@@ -55,6 +55,11 @@
   h1 .cn{display:block;font-size:.42em;font-weight:700;letter-spacing:.02em;color:var(--ink);margin-top:6px;}
   h1 em{font-style:normal;color:var(--acid);}
   .tagline{color:var(--muted);max-width:560px;font-size:clamp(14px,3.6vw,16px);line-height:1.6;}
+  /* 宽屏：放开宽度限制，并强制首句整行平铺不折行 */
+  @media(min-width:768px){
+    .tagline{max-width:none;}
+    .tagline .tl-1{white-space:nowrap;}
+  }
   .tagline b{color:var(--ink);font-weight:500;}
   .intl{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.1em;margin-top:14px;}
 
@@ -221,7 +226,7 @@
   <header>
     <span class="badge"><span class="dot"></span>AI EMOTIONAL FORENSICS · V0.2<span style="color:var(--dim);margin:0 2px;">│</span>VIEWS <span id="viewCount" style="color:var(--acid);font-weight:700;">—</span></span>
     <h1><em>Soul</em>Translator<span class="cn">灵魂翻译官</span></h1>
-    <p class="tagline">剥离对话里的<b>阴阳怪气</b>与字面噪声，还原对方的<b>真实意图</b>与<b>心理动机</b>，给你 4 套高情商回复脚本。<br>拒绝精神内耗，把聊天主动权拿回来。</p>
+    <p class="tagline"><span class="tl-1">剥离对话里的<b>阴阳怪气</b>与字面噪声，还原对方的<b>真实意图</b>与<b>心理动机</b>，给你 4 套高情商回复脚本。</span><br>拒绝精神内耗，把聊天主动权拿回来。</p>
     <p class="intl">DECODE WHAT THEY <span style="color:var(--mag)">REALLY</span> MEAN · STOP OVERTHINKING · WIN THE CHAT</p>
   </header>
 

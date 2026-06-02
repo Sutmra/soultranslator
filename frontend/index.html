@@ -227,7 +227,7 @@
 
   <!-- HERO -->
   <header>
-    <span class="badge"><span class="dot"></span>AI EMOTIONAL FORENSICS · V0.2<span style="color:var(--dim);margin:0 2px;">│</span>VIEWS <span id="viewCount" style="color:var(--acid);font-weight:700;">—</span></span>
+    <span class="badge"><span class="dot"></span>AI EMOTIONAL FORENSICS · <span id="appVer">V0.3</span><span style="color:var(--dim);margin:0 2px;">│</span>VIEWS <span id="viewCount" style="color:var(--acid);font-weight:700;">—</span></span>
     <h1><em>Soul</em>Translator<span class="cn">灵魂翻译官</span></h1>
     <div class="tagwrap">
       <p class="tag-lead"><span class="tl-1">拆解 <span class="hl">阴阳话术</span>，还原 <span class="hl">真实意图与心理动机</span>。给你 4 套现成的高情商回复脚本。</span></p>
@@ -305,6 +305,14 @@
 <div id="toast"></div>
 
 <script>
+/* ---------------- VERSION (单一来源，改这一处即可) ---------------- */
+const APP_VERSION = "V0.3";
+document.addEventListener('DOMContentLoaded', ()=>{
+  const v = document.getElementById('appVer');
+  if(v) v.textContent = APP_VERSION;
+  document.title = `SoulTranslator · 灵魂翻译官 ${APP_VERSION}`;
+});
+
 /* ---------------- STATE ---------------- */
 const DUNBAR_SLIDER_CONFIG = {
   intimate: {

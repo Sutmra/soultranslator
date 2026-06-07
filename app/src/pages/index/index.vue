@@ -36,10 +36,15 @@
     </view>
 
     <!-- GO -->
-    <view class="go" @click="onGoTap">
-      <text class="go-txt">开始解密灵魂</text>
-      <text class="arrow">→</text>
+    <view class="go" :class="{ 'go-loading': loading }" @click="onGoTap">
+      <text class="go-txt">{{ loading ? '正在剥离情绪伪装…' : '开始解密灵魂' }}</text>
+      <text class="arrow" v-if="!loading">→</text>
     </view>
+
+    <text v-if="errMsg" class="errmsg">{{ errMsg }}</text>
+
+    <!-- 分析结果 -->
+    <result-panel :data="result" />
 
     <view class="footer">
       <text>SOULTRANSLATOR · 灵魂翻译官</text>
@@ -51,14 +56,19 @@
 <script>
 import SceneTabs from '@/components/SceneTabs.vue'
 import RelationSlider from '@/components/RelationSlider.vue'
+import ResultPanel from '@/components/ResultPanel.vue'
+import { analyze } from '@/utils/request'
 
 export default {
-  components: { SceneTabs, RelationSlider },
+  components: { SceneTabs, RelationSlider, ResultPanel },
   data() {
     return {
       scene: 'intimate',
       level: 1,
       text: '',
+      loading: false,
+      result: null,
+      errMsg: '',
     }
   },
   methods: {
@@ -66,9 +76,27 @@ export default {
     onUploadTap() {
       uni.showToast({ title: '截图识别将在后续步骤接入', icon: 'none' })
     },
-    // Step 4 接入分析；此处先占位
-    onGoTap() {
-      uni.showToast({ title: '分析功能将在 Step 4 接入', icon: 'none' })
+    // Step 4：文字分析主流程
+    async onGoTap() {
+      if (this.loading) return
+      if (!this.text.trim()) {
+        uni.showToast({ title: '请先粘贴对方说的话', icon: 'none' })
+        return
+      }
+      this.loading = true
+      this.errMsg = ''
+      this.result = null
+      try {
+        this.result = await analyze({
+          scene: this.scene,
+          level: this.level,
+          text: this.text.trim(),
+        })
+      } catch (e) {
+        this.errMsg = (e && e.message) || '分析失败，请重试'
+      } finally {
+        this.loading = false
+      }
     },
   },
 }
@@ -188,6 +216,19 @@ export default {
 }
 .go-txt { font-size: 32rpx; font-weight: 800; color: $st-bg; }
 .arrow { font-size: 32rpx; font-weight: 800; color: $st-bg; margin-left: 12rpx; }
+.go-loading { opacity: 0.6; }
+
+.errmsg {
+  display: block;
+  margin-top: 24rpx;
+  padding: 20rpx 24rpx;
+  background: rgba(255, 71, 71, 0.12);
+  border: 2rpx solid $st-red;
+  border-radius: 16rpx;
+  color: $st-red;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
 
 /* FOOTER */
 .footer {

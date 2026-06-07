@@ -44,9 +44,15 @@
     <!-- MODULE C 高情商嘴替专区 -->
     <view class="card">
       <view class="ctitle">🎤 高情商嘴替专区<text class="tag">MODULE C</text></view>
-      <view class="reply" v-for="(rp, i) in reps" :key="i">
-        <text class="rl">{{ rp.strategy || rp.label }}</text>
-        <text class="rt">{{ rp.content || rp.text }}</text>
+      <view class="replies">
+        <view class="reply" hover-class="reply-press" :hover-stay-time="80" v-for="(rp, i) in reps" :key="i">
+          <view class="copy" hover-class="copy-press" :hover-stay-time="80" @click="copy(rp.content || rp.text)">
+            <image class="copy-ic copy-ic--base" :src="copyIcon" />
+            <image class="copy-ic copy-ic--hov" :src="copyIconHover" />
+          </view>
+          <text class="rl">{{ rp.strategy || rp.label }}</text>
+          <text class="rt">{{ rp.content || rp.text }}</text>
+        </view>
       </view>
     </view>
   </view>
@@ -57,6 +63,15 @@ export default {
   name: 'ResultPanel',
   props: {
     data: { type: Object, default: null },
+  },
+  data() {
+    return {
+      // 剪贴板线框图标（SVG base64，两端 <image> 通用）；hover 版为青柠色
+      copyIcon:
+        'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGE5MDk5IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3QgeD0iOSIgeT0iOSIgd2lkdGg9IjEzIiBoZWlnaHQ9IjEzIiByeD0iMiIgcnk9IjIiLz48cGF0aCBkPSJNNSAxNUg0YTIgMiAwIDAgMS0yLTJWNGEyIDIgMCAwIDEgMi0yaDlhMiAyIDAgMCAxIDIgMnYxIi8+PC9zdmc+',
+      copyIconHover:
+        'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYzdmNTNhIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3QgeD0iOSIgeT0iOSIgd2lkdGg9IjEzIiBoZWlnaHQ9IjEzIiByeD0iMiIgcnk9IjIiLz48cGF0aCBkPSJNNSAxNUg0YTIgMiAwIDAgMS0yLTJWNGEyIDIgMCAwIDEgMi0yaDlhMiAyIDAgMCAxIDIgMnYxIi8+PC9zdmc+',
+    }
   },
   computed: {
     a() {
@@ -89,6 +104,14 @@ export default {
       const v = Number(n)
       if (isNaN(v)) return 0
       return Math.max(0, Math.min(100, Math.round(v)))
+    },
+    copy(text) {
+      if (!text) return
+      uni.setClipboardData({
+        data: text,
+        success: () => uni.showToast({ title: '已复制', icon: 'success' }),
+        fail: () => uni.showToast({ title: '复制失败', icon: 'none' }),
+      })
     },
   },
 }
@@ -182,19 +205,96 @@ export default {
 
 /* 嘴替卡片 */
 .reply {
+  position: relative;
   background: $st-panel-2;
   border: 2rpx solid $st-line;
   border-radius: 18rpx;
   padding: 24rpx;
   margin-bottom: 18rpx;
+  transition: 0.18s;
 }
 .reply:last-child { margin-bottom: 0; }
+/* 四色顶边（青/品红/灰/青柠），两端通用 */
+.reply:nth-child(1) { border-top: 4rpx solid $st-cyan; }
+.reply:nth-child(2) { border-top: 4rpx solid $st-mag; }
+.reply:nth-child(3) { border-top: 4rpx solid $st-muted; }
+.reply:nth-child(4) { border-top: 4rpx solid $st-acid; }
+.copy {
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
+  width: 52rpx;
+  height: 52rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2rpx solid $st-line;
+  border-radius: 12rpx;
+  transition: 0.15s;
+}
+.copy-ic {
+  width: 30rpx;
+  height: 30rpx;
+}
+.copy-ic--hov {
+  display: none;
+}
+
+/* 按压反馈（hover-class，触摸端按住时生效，两端通用） */
+.reply-press {
+  border-color: #3a4049;
+  transform: translateY(-4rpx);
+}
+.copy-press {
+  border-color: $st-acid;
+  background: rgba(199, 245, 58, 0.08);
+}
+.copy-press .copy-ic--base {
+  display: none;
+}
+.copy-press .copy-ic--hov {
+  display: block;
+}
+
+/* 桌面端 hover：卡片上浮 + 复制按钮变青柠（小程序无 hover，#ifdef 隔离） */
+/* #ifdef H5 */
+.reply:hover {
+  border-color: #3a4049;
+  transform: translateY(-4rpx);
+}
+.copy {
+  cursor: pointer;
+}
+.copy:hover {
+  border-color: $st-acid;
+  background: rgba(199, 245, 58, 0.08);
+}
+.copy:hover .copy-ic--base {
+  display: none;
+}
+.copy:hover .copy-ic--hov {
+  display: block;
+}
+/* 宽屏：嘴替两列网格（窄屏/手机保持单列） */
+@media (min-width: 600px) {
+  .replies {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18rpx;
+  }
+  .reply {
+    margin-bottom: 0;
+  }
+}
+/* #endif */
 .rl {
   display: block;
   font-size: 26rpx;
   font-weight: 700;
   color: $st-acid;
   margin-bottom: 12rpx;
+  padding-right: 72rpx;
 }
 .rt {
   display: block;

@@ -51,10 +51,11 @@
 
 ## 里程碑 3：分享 / 转发
 
-**Step 7 — 转发卡片 + 分享长图**
-- 微信原生 `onShareAppMessage` 转发卡片。
-- `<canvas type="2d">` 绘制结果长图 + `uni.canvasToTempFilePath` → 保存到相册 / 分享。
-- **验证**：能转发给好友并显示卡片；能生成并保存一张包含 4 卡片的长图。
+**Step 7 — 转发 / 朋友圈卡片**（范围 A，决策见 mp-progress）
+- 微信原生 `onShareAppMessage`（转发好友）+ `onShareTimeline`（分享朋友圈）+ `showShareMenu`。
+- 页内 `<button open-type="share">` 提供转发入口（MP only）。
+- **验证**：右上角 ⋯ 及页内按钮能转发给好友、能分享朋友圈，卡片标题随结果变化。
+- **延后**：canvas 长图海报 + 保存相册 → 另开 `feat/mp-poster` 里程碑后续做（跨端 canvas 复杂，MVP 不阻塞）。
 
 ---
 

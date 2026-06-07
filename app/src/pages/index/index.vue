@@ -50,6 +50,11 @@
     <!-- 分析结果 -->
     <result-panel :data="result" />
 
+    <!-- 转发（微信原生，仅小程序） -->
+    <!-- #ifdef MP-WEIXIN -->
+    <button class="share-btn" open-type="share">转发给好友 →</button>
+    <!-- #endif -->
+
     <view class="footer">
       <text>SOULTRANSLATOR · 灵魂翻译官</text>
       <text>本工具输出仅供情绪参考与娱乐 · 真实关系请用真心经营 ✦</text>
@@ -66,6 +71,33 @@ import { chooseImageBase64 } from '@/utils/image'
 
 export default {
   components: { SceneTabs, RelationSlider, ResultPanel },
+  computed: {
+    shareTitle() {
+      const st =
+        this.result &&
+        this.result.relationship_status &&
+        this.result.relationship_status.status_title
+      return st
+        ? `「${st}」—— 灵魂翻译官帮我看穿了潜台词`
+        : '灵魂翻译官 · 看穿聊天潜台词，拿回主动权'
+    },
+  },
+  onShow() {
+    // #ifdef MP-WEIXIN
+    uni.showShareMenu({
+      withShareTicket: true,
+      menus: ['shareAppMessage', 'shareTimeline'],
+    })
+    // #endif
+  },
+  // 微信转发好友
+  onShareAppMessage() {
+    return { title: this.shareTitle, path: '/pages/index/index' }
+  },
+  // 微信分享朋友圈
+  onShareTimeline() {
+    return { title: this.shareTitle }
+  },
   data() {
     return {
       scene: 'intimate',
@@ -284,6 +316,22 @@ export default {
 .go-txt { font-size: 32rpx; font-weight: 800; color: $st-bg; }
 .arrow { font-size: 32rpx; font-weight: 800; color: $st-bg; margin-left: 12rpx; }
 .go-loading { opacity: 0.6; }
+
+/* 转发按钮（微信原生 button，重置默认样式） */
+.share-btn {
+  margin-top: 32rpx;
+  padding: 28rpx;
+  background: rgba(255, 46, 139, 0.06);
+  border: 2rpx dashed $st-mag;
+  border-radius: 24rpx;
+  color: $st-mag;
+  font-size: 28rpx;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.share-btn::after {
+  border: none;
+}
 
 .errmsg {
   display: block;

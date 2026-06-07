@@ -22,7 +22,7 @@ app/
     ├── uni.scss          # 全局 SCSS 变量（含 $st-* 配色，从原网页 :root 迁移）
     ├── App.vue           # 全局 page 暗色底 + 字体
     ├── pages.json        # 暗色导航栏 + 标题"灵魂翻译官"
-    ├── pages/index/index.vue   # ✅(Step 3) 首页：Header + 三步骤 + 输入区 + GO（静态）
+    ├── pages/index/index.vue   # ✅(Step 3~7) 首页：场景/滑块/输入/传图/分析/结果 + 转发(onShareAppMessage/onShareTimeline)
     ├── components/
     │   ├── SceneTabs.vue      # ✅(Step 3) 四象限场域选择（v-model 场域 key）
     │   ├── RelationSlider.vue # ✅(Step 3) 自定义随动气泡滑块(1~4 档)，触摸+鼠标双支持(#ifdef H5 挂 window)

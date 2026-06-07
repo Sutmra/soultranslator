@@ -4,11 +4,11 @@
 
 ## 当前光标
 
-**下一步 = Step 7：分享/转发卡片**（onShareAppMessage 转发 + canvas 生成长图 + 保存相册）。
-Step 1~6 已完成并验证。**这是 MVP（里程碑1~3）最后一步。**
+**🎉 MVP（里程碑 1~3）已完成**（Step 1~7）。下一步有两条线，按需选：
+- **里程碑 4：上线**（依赖营业执照/备案/正式注册，见 [mp-launch-checklist.md](mp-launch-checklist.md)）—— Step 8 内容安全 → Step 9 迁国内+备案域名 → Step 10 审核发布。
+- **延后增强**：`feat/mp-poster`（canvas 长图海报+保存相册，决策 D12 延后）。
 
-**开工前**：`git checkout main && git pull`（拿到已合并的上一步），再 `git checkout -b feat/mp-step7-share` 从最新 main 开始。
-（PR 是否已合并 / 在飞，用 `gh pr list` 查，不在此记录。）
+**开工前**：`git checkout main && git pull`，再 `git checkout -b feat/mp-<thing>` 从最新 main 开始。
 
 ## 进度日志
 
@@ -18,7 +18,8 @@ Step 1~6 已完成并验证。**这是 MVP（里程碑1~3）最后一步。**
 - 2026-06-07 — **Step 3 完成**：首页静态 UI 骨架，暗色主题还原原网页设计。新增 `utils/sceneConfig.js`、`components/SceneTabs.vue`(四象限)、`components/RelationSlider.vue`(随动气泡滑块)；改 index.vue/App.vue/pages.json/uni.scss；装 sass。坑：H5 桌面鼠标拖不动 → 加 @mousedown + #ifdef H5 挂 window 监听修复。两端验证通过。PR #3 squash 合并入 main(ff3f79b)。
 - 2026-06-07 — **Step 4 完成**：文字分析主流程。新增 `utils/prompt.js`(buildSystemPrompt，从原网页迁入)、`components/ResultPanel.vue`(结果三模块)；`utils/request.js` 加 `analyze()`；index.vue GO 接真分析(loading/错误/结果)。**D11 拍板 = A**(prompt 放 app/)。两端实测出完整结果(三模块+红绿灯+胜率+4嘴替)。PR #4 squash 合并入 main。
 - 2026-06-07 — **Step 5 完成**：截图 OCR。新增 `utils/image.js`(chooseImageBase64，#ifdef 屏蔽 H5/小程序)；`utils/request.js` 加 `ocrImage()`；index.vue 上传区接真选图(缩略图+删除)、GO 改为有图先 OCR 再分析。坑：缩略图不显示 → 容器需显式宽度 + 预览改用 base64 data URL(两端通用)。两端验证通过。PR #5 合并入 main。
-- 2026-06-07 — **Step 6 完成**：复制嘴替 + UI 增强。ResultPanel 加复制(setClipboardData)；按用户要求把文字按钮换 SVG 图标、补四色顶边、H5 宽屏两列网格、hover(:hover #ifdef H5)+触摸按压(hover-class)反馈。坑：`<image>` 图标无法 CSS 重着色 → 灰/青柠两图切换；触摸屏无 hover → 用 hover-class 等价。两端验证通过。分支 feat/mp-step6-copy。
+- 2026-06-07 — **Step 6 完成**：复制嘴替 + UI 增强。ResultPanel 加复制(setClipboardData)；按用户要求把文字按钮换 SVG 图标、补四色顶边、H5 宽屏两列网格、hover(:hover #ifdef H5)+触摸按压(hover-class)反馈。坑：`<image>` 图标无法 CSS 重着色 → 灰/青柠两图切换；触摸屏无 hover → 用 hover-class 等价。PR #6 合并入 main。
+- 2026-06-07 — **Step 7 完成（MVP 收官）**：分享。index.vue 加 onShareAppMessage(转发好友)+onShareTimeline(朋友圈)+showShareMenu+页内 open-type=share 按钮(#ifdef MP-WEIXIN)。**D12：范围收窄为 A**(转发/朋友圈)，canvas 长图海报延后到 feat/mp-poster。微信端验证(··· 菜单转发/朋友圈、页内按钮)通过。分支 feat/mp-step7-share。**🎉 里程碑 1~3 (MVP) 全部完成。**
 
 ---
 
@@ -35,6 +36,7 @@ Step 1~6 已完成并验证。**这是 MVP（里程碑1~3）最后一步。**
 - **D9**：环境修正 —— Node 装在 D:\software\node、npm 缓存目录无写权限 → cache 改 `C:\Users\YanSiyu\.npm-cache`、registry 改 npmmirror（国内加速）。
 - **D10**：H5 产物定位（细化 D1）—— **暂不替换桌面网页**。桌面网页继续用 Sutmra 的 `frontend/`（980px 宽屏多列）；uni-app H5 只当**开发预览 + 潜在移动端 web**。原因：uni-app 移动优先竖版(rpx)，桌面不会自动变宽屏多列，直接替换会退化。是否/如何替换推迟，不影响小程序 MVP。
 - **D11**：一致性架构原则 —— **一致性放共享层，不放重复 UI**。① 业务大脑(prompt/分析逻辑) + ② 数据文案(场域/档位) 须一致 → 单一来源(目标上移共享 `backend/` 的 `/api/analyze`)；③ 纯 UI/布局/交互 各端独立、允许差异。隐患：buildPrompt+场域配置 frontend 与 app/ 各一份会漂移。**Step 4 拍板** A(先放 app/ 快上线，后续上移后端，记技术债) vs B(先 `feat/be-analyze` 把大脑放后端、需与 Sutmra 协调双审，再让小程序调)。**→ 已选 A**（buildPrompt 放 `app/utils/prompt.js`；上移后端收敛留作后续技术债）。
+- **D12**：Step 7 分享**范围收窄为 A** —— 只做微信原生 `onShareAppMessage`(转发好友)+`onShareTimeline`(朋友圈)+页内 open-type=share 按钮；**canvas 长图海报 + 保存相册延后**到 `feat/mp-poster` 里程碑（跨端 canvas 复杂，不阻塞 MVP）。
 
 ---
 

@@ -5,7 +5,10 @@
 ## 当前光标
 
 **下一步 = Step 3：首页 UI 骨架（四象限 / 滑块 / 输入 / 传图，静态）**（计划见 [mp-plan.md](mp-plan.md)）。
-Step 1~2 已完成并验证；在 `feat/mp-bootstrap` 分支（初始化 PR，准备推送）。
+Step 1~2 已完成并验证。
+
+**⏳ 在飞**：初始化 PR **#2**（`feat/mp-bootstrap` → main）已推送、待 Sutmra review+squash 合并。
+**恢复方式**：① 待 PR #2 合并后 `git checkout main && git pull` 拿到 bootstrap，② 再 `git checkout -b feat/mp-step3-ui` 从最新 main 开始 Step 3。**别重复推 feat/mp-bootstrap。**
 
 ## 进度日志
 

@@ -3,21 +3,39 @@
 > 占位文档。Step 1 建好 uni-app 脚手架后，在此填充实际目录结构、各模块职责、关键数据结构。
 > 网页/后端现状架构见 [README.md](README.md)「项目架构」节。
 
-## 现状（待 Step 1 后更新）
+## 现状（Step 1 已落地）
 
-尚未创建 uni-app 工程。
-
-## 计划中的结构（实现后以实际为准）
+已用官方模板 `dcloudio/uni-preset-vue#vite`（Vue3 + Vite，无 TS）在 `app/` 生成 uni-app 工程，
+微信小程序 + H5 双端均编译通过并可视化验证。
 
 ```
-（uni-app 工程，Step 1 落地后补全）
-├── pages/            # 页面（首页 = 分析主流程）
-├── components/       # 复用组件（场域卡片 / 滑动条气泡 / 嘴替卡片 / 分享 canvas）
-├── utils/
-│   ├── config.*      # 后端地址、模型名等配置（改这里切换 Render/国内域名）
-│   ├── request.*     # 统一网络请求封装（条件编译屏蔽 H5/小程序差异）
-│   └── prompt.*      # buildPrompt（从现网页 index.html 迁移）
-└── static/           # 静态资源
+app/
+├── index.html            # H5 入口
+├── package.json          # 依赖 + dev/build 脚本（dev:h5 / dev:mp-weixin 等）
+├── vite.config.js        # Vite + @dcloudio/vite-plugin-uni 配置
+├── shims-uni.d.ts
+└── src/
+    ├── main.js           # 入口，createSSRApp
+    ├── App.vue           # 应用根组件（全局样式 / onLaunch 等生命周期）
+    ├── manifest.json     # 应用级配置（AppID、各端开关）—— 正式 AppID 在里程碑 4 替换
+    ├── pages.json        # 页面路由 + 全局窗口样式（新增页面在此登记）
+    ├── uni.scss          # 全局 SCSS 变量
+    ├── pages/index/index.vue   # 首页（Step 3 起改造成分析主流程）
+    └── static/logo.png
+```
+
+构建产物（已 gitignore）：`app/dist/build/mp-weixin`（导入微信开发者工具）、`app/dist/build/h5`（网页）。
+
+## 计划中的结构（后续步骤逐步补全）
+
+```
+src/
+├── pages/index/index.vue    # 分析主流程页
+├── components/              # (Step 3+) 场域卡片 / 滑动条气泡 / 嘴替卡片 / 分享 canvas
+└── utils/
+    ├── config.js           # (Step 2) 后端地址、模型名（改这里切换 Render/国内域名）
+    ├── request.js          # (Step 2) 统一网络请求封装（条件编译屏蔽 H5/小程序差异）
+    └── prompt.js           # (Step 4) buildPrompt（从现网页 index.html 迁移）
 ```
 
 ## 关键数据结构

@@ -4,12 +4,13 @@
 
 ## 当前光标
 
-**下一步 = Step 1：初始化 uni-app 项目骨架**（计划见 [mp-plan.md](mp-plan.md)）。
-规划文档已就绪，尚未建分支、尚未写代码。
+**下一步 = Step 2：封装统一 request，调通后端**（计划见 [mp-plan.md](mp-plan.md)）。
+Step 1 已完成并验证；在 `feat/miniprogram` 分支。
 
 ## 进度日志
 
-- 2026-06-07 — Phase 1 完成：生成 CLAUDE.md / mp-prd / mp-plan / mp-architecture / mp-progress 五份规划文档。等待用户过目计划后开 `feat/miniprogram` 分支进入 Step 1。
+- 2026-06-07 — Phase 1 完成：生成规划文档，commit 66add15。
+- 2026-06-07 — **Step 1 完成**：`app/` 生成 uni-app(Vue3+Vite) 工程，依赖装好；微信小程序 + H5 双端编译通过；微信开发者工具（测试号）+ 浏览器 http://localhost:5173 均可视化确认默认首页。环境坑：Node 装在 D:\software\node，npm 缓存目录无写权限 → 已把 cache 改到 C:\Users\YanSiyu\.npm-cache、registry 改 npmmirror。
 
 ---
 

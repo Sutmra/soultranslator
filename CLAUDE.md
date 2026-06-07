@@ -1,37 +1,53 @@
-# CLAUDE.md — SoulTranslator 项目规则
+# CLAUDE.md — SoulTranslator 项目规则（共享）
 
 SoulTranslator（灵魂翻译器）：剥离聊天里的阴阳怪气，还原对方真实意图，一键给出 4 套高情商「嘴替」回复。
-现有网页版（V0.3）线上运行中；当前正在新增**微信小程序**里程碑（iOS/Android 通用），网页保留、后端复用。
+现有网页版（V0.3）线上运行中；当前在新增**微信小程序**里程碑，网页保留、后端复用。
 
-## 文档地图（职能 → 实际文件）
+> 本文件只放**两条产品线共享**的规则。各自的专属规则在子目录 CLAUDE.md，操作该目录时自动加载：
+> - 小程序：[app/CLAUDE.md](app/CLAUDE.md)
+> - 网页：`frontend/CLAUDE.md`（Sutmra 视需要自建）
 
-每次写码 / 子代理取文档，按这张表找：
+## 仓库分工（谁拥有哪片，改别人的片先打招呼）
 
-| 职能 | 实际位置 |
-|---|---|
-| 产品总览 PRD | [README.md](README.md)（整体卖点）+ [mp-prd.md](mp-prd.md)（小程序里程碑的 PRD + 技术选型） |
-| 架构 | [README.md](README.md)「项目架构」节（网页/后端现状）+ [mp-architecture.md](mp-architecture.md)（小程序代码结构，Step 1 后填充） |
-| 实现计划 | [mp-plan.md](mp-plan.md)（小程序分步计划，每步带验证标准） |
-| 进度 | [CHANGELOG.md](CHANGELOG.md)（发布历史）+ [mp-progress.md](mp-progress.md)（小程序开发滚动进度） |
-| 决策记录 | [mp-progress.md](mp-progress.md) 末尾「未整理决策」区 + 上方「已整理决策」区 |
+| 目录 / 文件 | 归属 | 说明 |
+|---|---|---|
+| `app/` + [docs/miniprogram/](docs/miniprogram/) | 🟦 小程序（Ysy2017） | uni-app 工程 + 小程序计划/进度 |
+| `frontend/` `soul-translator.html` + [docs/web/](docs/web/) | 🟨 网页（Sutmra） | 网页代码 + 网页计划/进度 |
+| `backend/` | 🟩 **共享** | Express 后端代理，两条线都调 |
+| `CLAUDE.md` `CONTRIBUTING.md` `README.md` `CHANGELOG.md` | ⬜ 共享 | 改动需双方知会同意 |
 
-## 项目规则（每次写码前遵守）
+- 各自只动自己那片，互不干扰；`git pull` 拿到对方改动也不影响自己。
+- **`backend/` 是唯一共享交集**：改接口 / 返回结构 → 走 PR + 提前知会对方，避免一边改崩另一边。
 
-- 写任何代码前，先读 [mp-architecture.md](mp-architecture.md) 和 [mp-prd.md](mp-prd.md)。
-- 倾向模块化：多个小文件 > 单个巨石文件。（现网页是单文件 HTML，小程序不要重蹈覆辙。）
-- 完成里程碑/大功能后，更新 [mp-architecture.md](mp-architecture.md) 和 [mp-progress.md](mp-progress.md)。
-- 改外部配置字段（后端地址、AppID、密钥名）时，主动提示用户填到对应配置/.env。
-- 后端密钥（DeepSeek/Gemini/Upstash）只在后端，前端/小程序永不持有。
+## 共享铁律
 
-## 分支约定
+- **后端密钥（DeepSeek/Gemini/Upstash）只在后端**，前端 / 小程序 / 网页永不持有。改外部配置字段（后端地址、AppID、密钥名）时，主动提示用户填到对应 `.env`。
+- 仓库是**公开仓**：代码里绝不写死任何 key / AppSecret（会被爬虫扫到盗刷）。
+- 倾向模块化：多个小文件 > 单个巨石文件。
 
-- **不在 main 上直接写。** 一个里程碑一条分支。
-- 命名沿用仓库现有风格 `feat/<kebab>`（参考历史 `feat/v0.3-typography`）。
-- 当前里程碑分支：`feat/miniprogram`。
-- 里程碑做完 → `branch vs main` review → 合并 main → 提封存。
+## 分支约定（两人协作 · 扁平模型）
 
-## 技术栈速记
+> 具体命令 / 怎么开 PR / 后端拆 PR 流程，见 [CONTRIBUTING.md](CONTRIBUTING.md)。下面是规则。
 
-- 前端统一框架：**uni-app（Vue3）**，一套代码编译出微信小程序 + H5 网页。
-- 后端：复用现有 **Express 代理**（Render，开发期勾「不校验合法域名」），上线前迁国内 + 绑备案域名。
-- 详见 [mp-prd.md](mp-prd.md) 技术选型节。
+
+- **`main` 是唯一长期分支**，共享主干，只能被 PR 合入。谁都不直接 push / commit 到 main。
+- 各自从最新 main 切**短命功能分支**，按产品线命名：小程序（Ysy2017）`feat/mp-<thing>`，网页（Sutmra）`feat/web-<thing>`，共享后端 `feat/be-<thing>`。一个功能/一步一条，合并后即删。
+- **只推「与本地分支同名的远程分支」，绝不推 main**；代码进 main 靠 PR 合并，不靠 push。本地 `main` 只用 `git pull` 更新，绝不在上面写。
+- 标准一轮：
+
+```powershell
+git checkout main; git pull            # 拿最新主干
+git checkout -b feat/mp-xxx            # 切自己的短命分支
+# ...写码... git add . ; git commit -m "..."
+git push -u origin feat/mp-xxx         # 推同名远程分支(不是 main)
+# GitHub 开 PR(base=main) → 对方扫一眼 diff → Squash merge → 删分支
+git checkout main; git pull            # 把已合内容同步回本地
+git branch -d feat/mp-xxx              # 删本地用完的分支
+```
+
+- **`backend/` 是唯一共享交集**，改它走 `feat/be-<thing>` 分支，且：① 尽量**单独成 PR**（别塞进前端 PR，便于审、合完对方 `git pull` 即可用）；② **两人都要 review**（改 `/api` 返回结构可能搞崩对方那端，必须双方点头）。其他目录（`app/` vs `frontend/`）各推各的，互不干扰。
+- main 开启**分支保护**（公开仓免费，GitHub → Settings → Branches 配置）：禁止直推 + 需 1 个 approval，让上面的铁律变成强制。
+
+## 产品总览
+
+整体卖点见 [README.md](README.md)；发布历史见 [CHANGELOG.md](CHANGELOG.md)。

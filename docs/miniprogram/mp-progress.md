@@ -1,6 +1,6 @@
 # mp-progress.md — 微信小程序开发滚动进度
 
-> 发布历史见 [CHANGELOG.md](CHANGELOG.md)。本文件记录小程序里程碑的每步进度 + 决策。
+> 发布历史见 [CHANGELOG.md](../../CHANGELOG.md)。本文件记录小程序里程碑的每步进度 + 决策。
 
 ## 当前光标
 

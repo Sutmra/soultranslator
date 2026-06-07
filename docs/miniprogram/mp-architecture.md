@@ -1,7 +1,7 @@
 # mp-architecture.md — 小程序代码结构（活文档）
 
 > 占位文档。Step 1 建好 uni-app 脚手架后，在此填充实际目录结构、各模块职责、关键数据结构。
-> 网页/后端现状架构见 [README.md](README.md)「项目架构」节。
+> 网页/后端现状架构见 [README.md](../../README.md)「项目架构」节。
 
 ## 现状（Step 1 已落地）
 

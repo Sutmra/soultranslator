@@ -28,16 +28,20 @@
         :maxlength="-1"
       />
       <text class="orline">或 上传聊天截图（AI 自动 OCR 识别）</text>
-      <view class="drop" @click="onUploadTap">
+      <view v-if="!imagePreview" class="drop" @click="onUploadTap">
         <text class="ic">📸</text>
         <text class="drop-t">点击上传聊天截图</text>
         <text class="drop-s">.jpg .png · ≤ 5MB</text>
+      </view>
+      <view v-else class="thumb">
+        <image class="thumb-img" :src="imagePreview" mode="widthFix" />
+        <view class="thumb-x" @click="removeImage">×</view>
       </view>
     </view>
 
     <!-- GO -->
     <view class="go" :class="{ 'go-loading': loading }" @click="onGoTap">
-      <text class="go-txt">{{ loading ? '正在剥离情绪伪装…' : '开始解密灵魂' }}</text>
+      <text class="go-txt">{{ loading ? loadingLabel : '开始解密灵魂' }}</text>
       <text class="arrow" v-if="!loading">→</text>
     </view>
 
@@ -57,7 +61,8 @@
 import SceneTabs from '@/components/SceneTabs.vue'
 import RelationSlider from '@/components/RelationSlider.vue'
 import ResultPanel from '@/components/ResultPanel.vue'
-import { analyze } from '@/utils/request'
+import { analyze, ocrImage } from '@/utils/request'
+import { chooseImageBase64 } from '@/utils/image'
 
 export default {
   components: { SceneTabs, RelationSlider, ResultPanel },
@@ -66,36 +71,72 @@ export default {
       scene: 'intimate',
       level: 1,
       text: '',
+      imageBase64: null,
+      imageMime: '',
+      imagePreview: '',
       loading: false,
+      loadingLabel: '正在剥离情绪伪装…',
       result: null,
       errMsg: '',
     }
   },
   methods: {
-    // Step 5 接入截图 OCR；此处先占位
-    onUploadTap() {
-      uni.showToast({ title: '截图识别将在后续步骤接入', icon: 'none' })
+    // Step 5：选取聊天截图
+    async onUploadTap() {
+      if (this.loading) return
+      try {
+        const img = await chooseImageBase64()
+        if (!img) return // 用户取消
+        this.imageBase64 = img.base64
+        this.imageMime = img.mime
+        // 用 base64 data URL 预览，两端通用（比 blob/wxfile 临时路径稳）
+        this.imagePreview = `data:${img.mime};base64,${img.base64}`
+      } catch (e) {
+        uni.showToast({ title: (e && e.message) || '选择图片失败', icon: 'none' })
+      }
     },
-    // Step 4：文字分析主流程
+    removeImage() {
+      this.imageBase64 = null
+      this.imageMime = ''
+      this.imagePreview = ''
+    },
+    // Step 4/5：有图先 OCR，再走文字分析
     async onGoTap() {
       if (this.loading) return
-      if (!this.text.trim()) {
-        uni.showToast({ title: '请先粘贴对方说的话', icon: 'none' })
+      if (!this.text.trim() && !this.imageBase64) {
+        uni.showToast({ title: '请先输入文字或上传截图', icon: 'none' })
         return
       }
       this.loading = true
       this.errMsg = ''
       this.result = null
       try {
+        let finalText = this.text.trim()
+        if (this.imageBase64) {
+          this.loadingLabel = '正在识别截图文字…'
+          const ocrText = await ocrImage(this.imageBase64, this.imageMime)
+          if (ocrText === 'NOT_CHAT' || ocrText.length < 5) {
+            if (!finalText) {
+              throw new Error('图片里没有聊天对话，请上传微信/其他 App 的聊天截图')
+            }
+            uni.showToast({ title: '截图未识别到对话，仅分析文字', icon: 'none' })
+          } else {
+            finalText = finalText
+              ? `${finalText}\n\n【截图识别内容】\n${ocrText}`
+              : ocrText
+          }
+        }
+        this.loadingLabel = '正在剥离情绪伪装…'
         this.result = await analyze({
           scene: this.scene,
           level: this.level,
-          text: this.text.trim(),
+          text: finalText,
         })
       } catch (e) {
         this.errMsg = (e && e.message) || '分析失败，请重试'
       } finally {
         this.loading = false
+        this.loadingLabel = '正在剥离情绪伪装…'
       }
     },
   },
@@ -203,6 +244,32 @@ export default {
 .drop .ic { font-size: 56rpx; margin-bottom: 12rpx; }
 .drop-t { font-size: 26rpx; color: $st-muted; margin-bottom: 6rpx; }
 .drop-s { font-family: 'Space Mono', monospace; font-size: 20rpx; color: $st-dim; }
+
+/* 截图缩略图 */
+.thumb {
+  position: relative;
+  align-self: flex-start;
+  width: 55%;
+}
+.thumb-img {
+  width: 100%;
+  border-radius: 18rpx;
+  border: 2rpx solid $st-line;
+  display: block;
+}
+.thumb-x {
+  position: absolute;
+  top: -16rpx;
+  right: -16rpx;
+  width: 44rpx;
+  height: 44rpx;
+  line-height: 40rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: $st-red;
+  color: #fff;
+  font-size: 30rpx;
+}
 
 /* GO */
 .go {

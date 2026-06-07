@@ -29,9 +29,10 @@ app/
     │   └── ResultPanel.vue    # ✅(Step 4) 结果三模块：真心话照妖镜/关系走向诊断/嘴替专区（复制按钮留 Step 6）
     ├── utils/
     │   ├── config.js          # ✅(Step 2) 后端地址 BASE_URL、API_KEY、MODEL
-    │   ├── request.js         # ✅(Step 2/4) request()/getViews()/analyze()（analyze 组装 messages 调 /api/chat 并解析 JSON）
+    │   ├── request.js         # ✅(Step 2/4/5) request()/getViews()/analyze()/ocrImage()（ocrImage 调 /api/ocr）
     │   ├── sceneConfig.js     # ✅(Step 3) SCENES/DUNBAR_CAPACITY/DUNBAR_SLIDER_CONFIG（UI 与 prompt 共用）
-    │   └── prompt.js          # ✅(Step 4) buildSystemPrompt(scene,level)（决策 D11-A：先放 app/，后续考虑上移后端）
+    │   ├── prompt.js          # ✅(Step 4) buildSystemPrompt(scene,level)（决策 D11-A：先放 app/，后续考虑上移后端）
+    │   └── image.js           # ✅(Step 5) chooseImageBase64()：选图+转纯base64，#ifdef 屏蔽 H5(FileReader)/小程序(getFileSystemManager)
     └── static/logo.png
 ```
 
@@ -42,6 +43,7 @@ app/
 
 - **RelationSlider 拖动**：自绘滑轨 + 4 档，靠 `createSelectorQuery` 量轨道 rect 换算档位。触摸事件覆盖手机/小程序；H5 桌面是鼠标，需额外 `@mousedown` + `#ifdef H5` 下挂 `window` 的 mousemove/mouseup（小程序无 window，必须条件编译隔离）。
 - **配色**：`$st-*` SCSS 变量在 uni.scss，被全局自动注入，各组件 `<style lang="scss">` 直接用、无需 import。
+- **截图 OCR**：选图后预览用 **base64 data URL**(`data:mime;base64,...`)，两端通用，避免 H5 blob / 小程序 wxfile 临时路径在 `<image>` 不显示。缩略图容器须给**显式宽度**(width，非 max-width)，否则竖向 flex 里宽度塌成 0、`mode=widthFix` 高度也塌。有图时 GO 流程：先 `/api/ocr` 取文字 → 与输入文字合并 → 再 `/api/chat` 分析。
 
 ## 关键数据结构
 

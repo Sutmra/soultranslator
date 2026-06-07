@@ -4,10 +4,10 @@
 
 ## 当前光标
 
-**下一步 = Step 5：截图识别（OCR）**（chooseImage → base64 → /api/ocr(Gemini) → 并入分析）。
-Step 1~4 已完成并验证。
+**下一步 = Step 6：复制嘴替**（卡片复制按钮 → uni.setClipboardData + toast）。
+Step 1~5 已完成并验证。
 
-**开工前**：`git checkout main && git pull`（拿到已合并的上一步），再 `git checkout -b feat/mp-step5-ocr` 从最新 main 开始。
+**开工前**：`git checkout main && git pull`（拿到已合并的上一步），再 `git checkout -b feat/mp-step6-copy` 从最新 main 开始。
 （PR 是否已合并 / 在飞，用 `gh pr list` 查，不在此记录。）
 
 ## 进度日志
@@ -16,7 +16,8 @@ Step 1~4 已完成并验证。
 - 2026-06-07 — **Step 1 完成**：`app/` 生成 uni-app(Vue3+Vite) 工程，依赖装好；微信小程序 + H5 双端编译通过；微信开发者工具（测试号）+ 浏览器 http://localhost:5173 均可视化确认默认首页。环境坑：Node 装在 D:\software\node，npm 缓存目录无写权限 → 已把 cache 改到 C:\Users\YanSiyu\.npm-cache、registry 改 npmmirror。
 - 2026-06-07 — **Step 2 完成**：新增 `utils/config.js` + `utils/request.js`（uni.request 统一封装，两端通用），首页 onLoad 调 `/api/views` 验证连通。H5(localhost:5173) + 微信(测试号，勾「不校验合法域名」) 均显示「后端连通 ✅ 浏览量: 373」。分支由 feat/miniprogram 重命名为 feat/mp-bootstrap 以符合新扁平分支约定。bootstrap 经 PR #2 squash 合并入 main(a0cc5d7)。
 - 2026-06-07 — **Step 3 完成**：首页静态 UI 骨架，暗色主题还原原网页设计。新增 `utils/sceneConfig.js`、`components/SceneTabs.vue`(四象限)、`components/RelationSlider.vue`(随动气泡滑块)；改 index.vue/App.vue/pages.json/uni.scss；装 sass。坑：H5 桌面鼠标拖不动 → 加 @mousedown + #ifdef H5 挂 window 监听修复。两端验证通过。PR #3 squash 合并入 main(ff3f79b)。
-- 2026-06-07 — **Step 4 完成**：文字分析主流程。新增 `utils/prompt.js`(buildSystemPrompt，从原网页迁入)、`components/ResultPanel.vue`(结果三模块)；`utils/request.js` 加 `analyze()`；index.vue GO 接真分析(loading/错误/结果)。**D11 拍板 = A**(prompt 放 app/)。两端实测出完整结果(三模块+红绿灯+胜率+4嘴替)。分支 feat/mp-step4-analyze。
+- 2026-06-07 — **Step 4 完成**：文字分析主流程。新增 `utils/prompt.js`(buildSystemPrompt，从原网页迁入)、`components/ResultPanel.vue`(结果三模块)；`utils/request.js` 加 `analyze()`；index.vue GO 接真分析(loading/错误/结果)。**D11 拍板 = A**(prompt 放 app/)。两端实测出完整结果(三模块+红绿灯+胜率+4嘴替)。PR #4 squash 合并入 main。
+- 2026-06-07 — **Step 5 完成**：截图 OCR。新增 `utils/image.js`(chooseImageBase64，#ifdef 屏蔽 H5/小程序)；`utils/request.js` 加 `ocrImage()`；index.vue 上传区接真选图(缩略图+删除)、GO 改为有图先 OCR 再分析。坑：缩略图不显示 → 容器需显式宽度 + 预览改用 base64 data URL(两端通用)。两端验证(纯图/图文混合/删除/非聊天图提示)通过。分支 feat/mp-step5-ocr。
 
 ---
 

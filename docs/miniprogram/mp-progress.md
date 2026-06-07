@@ -4,13 +4,14 @@
 
 ## 当前光标
 
-**下一步 = Step 2：封装统一 request，调通后端**（计划见 [mp-plan.md](mp-plan.md)）。
-Step 1 已完成并验证；在 `feat/miniprogram` 分支。
+**下一步 = Step 3：首页 UI 骨架（四象限 / 滑块 / 输入 / 传图，静态）**（计划见 [mp-plan.md](mp-plan.md)）。
+Step 1~2 已完成并验证；在 `feat/mp-bootstrap` 分支（初始化 PR，准备推送）。
 
 ## 进度日志
 
 - 2026-06-07 — Phase 1 完成：生成规划文档，commit 66add15。
 - 2026-06-07 — **Step 1 完成**：`app/` 生成 uni-app(Vue3+Vite) 工程，依赖装好；微信小程序 + H5 双端编译通过；微信开发者工具（测试号）+ 浏览器 http://localhost:5173 均可视化确认默认首页。环境坑：Node 装在 D:\software\node，npm 缓存目录无写权限 → 已把 cache 改到 C:\Users\YanSiyu\.npm-cache、registry 改 npmmirror。
+- 2026-06-07 — **Step 2 完成**：新增 `utils/config.js` + `utils/request.js`（uni.request 统一封装，两端通用），首页 onLoad 调 `/api/views` 验证连通。H5(localhost:5173) + 微信(测试号，勾「不校验合法域名」) 均显示「后端连通 ✅ 浏览量: 373」。分支由 feat/miniprogram 重命名为 feat/mp-bootstrap 以符合新扁平分支约定。
 
 ---
 

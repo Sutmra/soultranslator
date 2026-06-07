@@ -33,8 +33,8 @@ src/
 ├── pages/index/index.vue    # 分析主流程页
 ├── components/              # (Step 3+) 场域卡片 / 滑动条气泡 / 嘴替卡片 / 分享 canvas
 └── utils/
-    ├── config.js           # (Step 2) 后端地址、模型名（改这里切换 Render/国内域名）
-    ├── request.js          # (Step 2) 统一网络请求封装（条件编译屏蔽 H5/小程序差异）
+    ├── config.js           # ✅(Step 2) 后端地址 BASE_URL、API_KEY、MODEL（改这里切换 Render/国内域名）
+    ├── request.js          # ✅(Step 2) 统一请求封装 request()/getViews()（uni.request，两端通用，60s 超时留给 Render 冷启动）
     └── prompt.js           # (Step 4) buildPrompt（从现网页 index.html 迁移）
 ```
 

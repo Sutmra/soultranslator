@@ -8,14 +8,29 @@
 </template>
 
 <script>
+import { getViews } from '@/utils/request'
+
 export default {
   data() {
     return {
-      title: 'Hello',
+      title: '正在连接后端…',
     }
   },
-  onLoad() {},
-  methods: {},
+  onLoad() {
+    this.testBackend()
+  },
+  methods: {
+    async testBackend() {
+      try {
+        const res = await getViews()
+        console.log('后端 /api/views 返回:', res)
+        this.title = '后端连通 ✅ 浏览量: ' + res.count
+      } catch (e) {
+        console.error('后端请求失败:', e)
+        this.title = '后端请求失败: ' + e.message
+      }
+    },
+  },
 }
 </script>
 
@@ -39,10 +54,12 @@ export default {
 .text-area {
   display: flex;
   justify-content: center;
+  padding: 0 40rpx;
 }
 
 .title {
-  font-size: 36rpx;
+  font-size: 32rpx;
   color: #8f8f94;
+  text-align: center;
 }
 </style>

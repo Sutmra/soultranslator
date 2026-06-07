@@ -25,12 +25,13 @@ app/
     ├── pages/index/index.vue   # ✅(Step 3) 首页：Header + 三步骤 + 输入区 + GO（静态）
     ├── components/
     │   ├── SceneTabs.vue      # ✅(Step 3) 四象限场域选择（v-model 场域 key）
-    │   └── RelationSlider.vue # ✅(Step 3) 自定义随动气泡滑块(1~4 档)，触摸+鼠标双支持(#ifdef H5 挂 window)
+    │   ├── RelationSlider.vue # ✅(Step 3) 自定义随动气泡滑块(1~4 档)，触摸+鼠标双支持(#ifdef H5 挂 window)
+    │   └── ResultPanel.vue    # ✅(Step 4) 结果三模块：真心话照妖镜/关系走向诊断/嘴替专区（复制按钮留 Step 6）
     ├── utils/
     │   ├── config.js          # ✅(Step 2) 后端地址 BASE_URL、API_KEY、MODEL
-    │   ├── request.js         # ✅(Step 2) 统一请求封装 request()/getViews()（uni.request，两端通用，60s 超时）
-    │   ├── sceneConfig.js     # ✅(Step 3) SCENES/DUNBAR_CAPACITY/DUNBAR_SLIDER_CONFIG（UI 与 Step 4 prompt 共用）
-    │   └── prompt.js          # (Step 4) buildPrompt（A: 迁入 app/ vs B: 上移后端，待定）
+    │   ├── request.js         # ✅(Step 2/4) request()/getViews()/analyze()（analyze 组装 messages 调 /api/chat 并解析 JSON）
+    │   ├── sceneConfig.js     # ✅(Step 3) SCENES/DUNBAR_CAPACITY/DUNBAR_SLIDER_CONFIG（UI 与 prompt 共用）
+    │   └── prompt.js          # ✅(Step 4) buildSystemPrompt(scene,level)（决策 D11-A：先放 app/，后续考虑上移后端）
     └── static/logo.png
 ```
 

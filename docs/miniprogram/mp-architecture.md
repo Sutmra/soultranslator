@@ -26,7 +26,7 @@ app/
     ├── components/
     │   ├── SceneTabs.vue      # ✅(Step 3) 四象限场域选择（v-model 场域 key）
     │   ├── RelationSlider.vue # ✅(Step 3) 自定义随动气泡滑块(1~4 档)，触摸+鼠标双支持(#ifdef H5 挂 window)
-    │   └── ResultPanel.vue    # ✅(Step 4) 结果三模块：真心话照妖镜/关系走向诊断/嘴替专区（复制按钮留 Step 6）
+    │   └── ResultPanel.vue    # ✅(Step 4/6) 结果三模块；嘴替卡片：复制(setClipboardData)+图标+四色顶边+两列网格(H5宽屏)+hover/按压反馈
     ├── utils/
     │   ├── config.js          # ✅(Step 2) 后端地址 BASE_URL、API_KEY、MODEL
     │   ├── request.js         # ✅(Step 2/4/5) request()/getViews()/analyze()/ocrImage()（ocrImage 调 /api/ocr）
@@ -44,6 +44,8 @@ app/
 - **RelationSlider 拖动**：自绘滑轨 + 4 档，靠 `createSelectorQuery` 量轨道 rect 换算档位。触摸事件覆盖手机/小程序；H5 桌面是鼠标，需额外 `@mousedown` + `#ifdef H5` 下挂 `window` 的 mousemove/mouseup（小程序无 window，必须条件编译隔离）。
 - **配色**：`$st-*` SCSS 变量在 uni.scss，被全局自动注入，各组件 `<style lang="scss">` 直接用、无需 import。
 - **截图 OCR**：选图后预览用 **base64 data URL**(`data:mime;base64,...`)，两端通用，避免 H5 blob / 小程序 wxfile 临时路径在 `<image>` 不显示。缩略图容器须给**显式宽度**(width，非 max-width)，否则竖向 flex 里宽度塌成 0、`mode=widthFix` 高度也塌。有图时 GO 流程：先 `/api/ocr` 取文字 → 与输入文字合并 → 再 `/api/chat` 分析。
+- **图标**：SVG 转 base64 data URI 放 `<image>`，两端通用；图标变色用灰/青柠两张图切换(CSS 无法给 `<image>` 重新着色)。
+- **交互反馈**：桌面鼠标用 `:hover`(`#ifdef H5`)；触摸屏无 hover，用 uni `hover-class` 做按压反馈(`.reply-press`/`.copy-press`，两端通用)。transition 放基础样式两端都平滑。两列网格仅 H5 宽屏(`@media min-width:600px`)，手机/小程序保持单列。
 
 ## 关键数据结构
 

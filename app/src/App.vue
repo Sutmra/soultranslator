@@ -12,6 +12,11 @@ export default {
 }
 </script>
 
-<style>
-/*每个页面公共css */
+<style lang="scss">
+/* 全局公共样式 */
+page {
+  background: $st-bg;
+  color: $st-ink;
+  font-family: 'Noto Sans SC', system-ui, sans-serif;
+}
 </style>

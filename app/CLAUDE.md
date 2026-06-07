@@ -31,3 +31,12 @@
 - 遵循根 [../CLAUDE.md](../CLAUDE.md) 的**扁平模型**：从 main 切短命分支 → PR 合回 main，无长期集成分支。
 - 小程序的分支统一命名 `feat/mp-<thing>`（如 `feat/mp-step2-request`），做完合 main 即删。
 - 实现按 [mp-plan.md](../docs/miniprogram/mp-plan.md) 分步走，一步一条分支一个 PR。
+
+## 封存 / 检查点约定（覆盖 project-bootstrap skill 的默认）
+
+> skill 默认"本地 merge 到 main 完成那刻提封存"。本项目**无本地 merge**，故重映射如下（CLAUDE.md 是事实，优先于 skill 倡议）：
+
+- **干净边界 = `push 分支 + 开 PR` 完成那刻**（不是"合并 main"）。此刻工作已落到远程分支、对话可弃，是首选封存/换会话点。
+- **PR 合并 + `git pull` 通常落在新会话**：合并由 Sutmra 在 GitHub 异步 squash，本地 main 只 `git pull` 同步。新会话靠 [mp-progress.md](../docs/miniprogram/mp-progress.md)「当前光标」接续。
+- **合并前 review**：由 PR 的人工 review（Sutmra）承担；`/code-review` 为**可选**的 push 前自审，非流程强制。
+- 因此 AI **不应**用"合并 main 完成"作为封存触发；应在"准备 push / 开 PR"时提醒封存。

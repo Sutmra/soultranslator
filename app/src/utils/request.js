@@ -37,6 +37,14 @@ export function getViews() {
   return request('/api/views', { method: 'GET' })
 }
 
+// 截图 OCR —— 把 base64 图片发给后端 /api/ocr(Gemini)，返回识别出的对话文字
+export function ocrImage(base64, mime) {
+  return request('/api/ocr', {
+    method: 'POST',
+    data: { imageData: base64, mimeType: mime || 'image/jpeg' },
+  }).then((data) => (data.text || '').trim())
+}
+
 // 灵魂翻译分析 —— 组装 prompt 调 /api/chat(DeepSeek)，解析出结构化 JSON
 export function analyze({ scene, level, text }) {
   return request('/api/chat', {

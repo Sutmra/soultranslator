@@ -19,6 +19,7 @@
 - 2026-06-07 — **Step 4 完成**：文字分析主流程。新增 `utils/prompt.js`(buildSystemPrompt，从原网页迁入)、`components/ResultPanel.vue`(结果三模块)；`utils/request.js` 加 `analyze()`；index.vue GO 接真分析(loading/错误/结果)。**D11 拍板 = A**(prompt 放 app/)。两端实测出完整结果(三模块+红绿灯+胜率+4嘴替)。PR #4 squash 合并入 main。
 - 2026-06-07 — **Step 5 完成**：截图 OCR。新增 `utils/image.js`(chooseImageBase64，#ifdef 屏蔽 H5/小程序)；`utils/request.js` 加 `ocrImage()`；index.vue 上传区接真选图(缩略图+删除)、GO 改为有图先 OCR 再分析。坑：缩略图不显示 → 容器需显式宽度 + 预览改用 base64 data URL(两端通用)。两端验证通过。PR #5 合并入 main。
 - 2026-06-07 — **Step 6 完成**：复制嘴替 + UI 增强。ResultPanel 加复制(setClipboardData)；按用户要求把文字按钮换 SVG 图标、补四色顶边、H5 宽屏两列网格、hover(:hover #ifdef H5)+触摸按压(hover-class)反馈。坑：`<image>` 图标无法 CSS 重着色 → 灰/青柠两图切换；触摸屏无 hover → 用 hover-class 等价。PR #6 合并入 main。
+- 2026-06-08 — **真机调试修复**：① index.vue textarea placeholder 里的 `&#10;` 换行 → 真机 WXML 解析报 `unexpected character '\n'`（模拟器宽容、真机严格），改单行；② SceneTabs 用 flex `gap` 在部分手机微信基础库不支持 → 场景卡片退回竖排，改 `width:48%`+`justify-content:space-between`（微信最稳两列写法）。**教训：模拟器 ≠ 真机，真机 WXML 解析/基础库更严，关键 UI 必须真机验证。** 分支 feat/mp-fix-realdevice。
 - 2026-06-07 — **Step 7 完成（MVP 收官）**：分享。index.vue 加 onShareAppMessage(转发好友)+onShareTimeline(朋友圈)+showShareMenu+页内 open-type=share 按钮(#ifdef MP-WEIXIN)。**D12：范围收窄为 A**(转发/朋友圈)，canvas 长图海报延后到 feat/mp-poster。微信端验证(··· 菜单转发/朋友圈、页内按钮)通过。分支 feat/mp-step7-share。**🎉 里程碑 1~3 (MVP) 全部完成。**
 
 ---

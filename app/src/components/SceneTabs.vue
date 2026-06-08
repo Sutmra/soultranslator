@@ -33,11 +33,12 @@ export default {
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 20rpx;
+  justify-content: space-between;
 }
 .tab {
   position: relative;
-  width: calc(50% - 10rpx);
+  width: 48%;
+  margin-bottom: 20rpx;
   box-sizing: border-box;
   padding: 28rpx 24rpx 24rpx;
   background: $st-panel;

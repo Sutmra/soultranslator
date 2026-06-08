@@ -23,7 +23,7 @@
       <textarea
         class="ta"
         v-model="text"
-        placeholder="把 TA 说的话粘进来…&#10;例如：「在忙，回头聊」「随便你吧」「你开心就好」"
+        placeholder="把 TA 说的话粘进来…例如：「在忙，回头聊」「随便你吧」「你开心就好」"
         placeholder-class="ta-ph"
         :maxlength="-1"
       />

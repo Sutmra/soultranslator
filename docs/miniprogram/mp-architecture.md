@@ -46,6 +46,7 @@ app/
 - **截图 OCR**：选图后预览用 **base64 data URL**(`data:mime;base64,...`)，两端通用，避免 H5 blob / 小程序 wxfile 临时路径在 `<image>` 不显示。缩略图容器须给**显式宽度**(width，非 max-width)，否则竖向 flex 里宽度塌成 0、`mode=widthFix` 高度也塌。有图时 GO 流程：先 `/api/ocr` 取文字 → 与输入文字合并 → 再 `/api/chat` 分析。
 - **图标**：SVG 转 base64 data URI 放 `<image>`，两端通用；图标变色用灰/青柠两张图切换(CSS 无法给 `<image>` 重新着色)。
 - **交互反馈**：桌面鼠标用 `:hover`(`#ifdef H5`)；触摸屏无 hover，用 uni `hover-class` 做按压反馈(`.reply-press`/`.copy-press`，两端通用)。transition 放基础样式两端都平滑。两列网格仅 H5 宽屏(`@media min-width:600px`)，手机/小程序保持单列。
+- **真机兼容坑（模拟器宽容、真机严格，关键 UI 必须真机验证）**：① WXML 属性里**不能有裸换行**（如 placeholder 用 `&#10;` 会编译成真实 `\n` → 真机报 `unexpected character '\n'`），占位符写单行。② flex `gap` 在**部分手机微信基础库不支持** → 多列布局退回单列；小程序端两列改用 `width:48%`+`justify-content:space-between`，别用 `gap`。
 
 ## 关键数据结构
 

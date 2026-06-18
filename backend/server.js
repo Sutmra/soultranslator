@@ -3,7 +3,7 @@ const cors = require("cors");
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "25mb" })); // 多图 OCR base64 合并后体积更大
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const GEMINI_API_KEY   = process.env.GEMINI_API_KEY;
@@ -79,25 +79,31 @@ app.post("/api/chat", async (req, res) => {
 });
 
 // Gemini OCR：从截图提取对话文字
+// 兼容两种入参：新版多图 { images: [{ imageData, mimeType }] }；旧版单图 { imageData, mimeType }
 app.post("/api/ocr", async (req, res) => {
   if (!GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
-  const { imageData, mimeType } = req.body;
-  if (!imageData) return res.status(400).json({ error: "imageData required" });
+
+  let images = Array.isArray(req.body.images) ? req.body.images : null;
+  if (!images && req.body.imageData) images = [{ imageData: req.body.imageData, mimeType: req.body.mimeType }];
+  images = (images || []).filter(im => im && im.imageData);
+  if (!images.length) return res.status(400).json({ error: "imageData required" });
+
+  // 单图保持原 prompt（不改网页行为）；多图当作同一段连续对话来读
+  const single = "请仔细查看这张图片，它可能是聊天截图、手机屏幕照片、或截图的截图。请找出图中所有聊天气泡里的文字，按顺序提取对话内容，格式为「A：内容 / B：内容」。只输出对话文字，不要描述图片。如果完全没有任何聊天文字，只回复：NOT_CHAT";
+  const multi = "下面这几张图是同一段聊天对话的连续截图（按给出的先后顺序）。请把它们当作一段完整对话：按时间顺序合并、去掉重叠重复的消息，提取所有聊天气泡里的文字，格式为「A：内容 / B：内容」（A=对方、B=我，按气泡左右/颜色判断，全程保持同一人对应同一标签）。只输出对话文字，不要描述图片。如果完全没有任何聊天文字，只回复：NOT_CHAT";
+  const instruction = images.length > 1 ? multi : single;
 
   try {
     const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+    const parts = images.map(im => ({ inline_data: { mime_type: im.mimeType || "image/jpeg", data: im.imageData } }));
+    parts.push({ text: instruction });
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{
-          parts: [
-            { inline_data: { mime_type: mimeType || "image/jpeg", data: imageData } },
-            { text: "请仔细查看这张图片，它可能是聊天截图、手机屏幕照片、或截图的截图。请找出图中所有聊天气泡里的文字，按顺序提取对话内容，格式为「A：内容 / B：内容」。只输出对话文字，不要描述图片。如果完全没有任何聊天文字，只回复：NOT_CHAT" }
-          ]
-        }],
-        generationConfig: { temperature: 0, maxOutputTokens: 512 }
+        contents: [{ parts }],
+        generationConfig: { temperature: 0, maxOutputTokens: 1536 }
       }),
     });
     const data = await response.json();

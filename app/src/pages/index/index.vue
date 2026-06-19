@@ -27,15 +27,18 @@
         placeholder-class="ta-ph"
         :maxlength="-1"
       />
-      <text class="orline">或 上传聊天截图（AI 自动 OCR 识别）</text>
-      <view v-if="!imagePreview" class="drop" @click="onUploadTap">
+      <text class="orline">或 上传聊天截图（可多张，AI 自动 OCR 识别）</text>
+      <view v-if="images.length === 0" class="drop" @click="onUploadTap">
         <text class="ic">📸</text>
         <text class="drop-t">点击上传聊天截图</text>
-        <text class="drop-s">.jpg .png · ≤ 5MB</text>
+        <text class="drop-s">.jpg .png · ≤ 5MB · 最多 {{ maxImages }} 张</text>
       </view>
-      <view v-else class="thumb">
-        <image class="thumb-img" :src="imagePreview" mode="widthFix" />
-        <view class="thumb-x" @click="removeImage">×</view>
+      <view v-else class="thumbs">
+        <view class="thumb" v-for="(img, i) in images" :key="i">
+          <image class="thumb-img" :src="img.preview" mode="aspectFill" />
+          <view class="thumb-x" @click.stop="removeImage(i)">×</view>
+        </view>
+        <view v-if="images.length < maxImages" class="thumb-add" @click="onUploadTap">＋</view>
       </view>
     </view>
 
@@ -66,8 +69,8 @@
 import SceneTabs from '@/components/SceneTabs.vue'
 import RelationSlider from '@/components/RelationSlider.vue'
 import ResultPanel from '@/components/ResultPanel.vue'
-import { analyze, ocrImage } from '@/utils/request'
-import { chooseImageBase64 } from '@/utils/image'
+import { analyze, ocrImages } from '@/utils/request'
+import { chooseImagesBase64 } from '@/utils/image'
 
 export default {
   components: { SceneTabs, RelationSlider, ResultPanel },
@@ -103,9 +106,8 @@ export default {
       scene: 'intimate',
       level: 1,
       text: '',
-      imageBase64: null,
-      imageMime: '',
-      imagePreview: '',
+      images: [], // [{ base64, mime, preview }]
+      maxImages: 6,
       loading: false,
       loadingLabel: '正在剥离情绪伪装…',
       result: null,
@@ -116,26 +118,32 @@ export default {
     // Step 5：选取聊天截图
     async onUploadTap() {
       if (this.loading) return
+      const remain = this.maxImages - this.images.length
+      if (remain <= 0) {
+        uni.showToast({ title: `最多上传 ${this.maxImages} 张`, icon: 'none' })
+        return
+      }
       try {
-        const img = await chooseImageBase64()
-        if (!img) return // 用户取消
-        this.imageBase64 = img.base64
-        this.imageMime = img.mime
-        // 用 base64 data URL 预览，两端通用（比 blob/wxfile 临时路径稳）
-        this.imagePreview = `data:${img.mime};base64,${img.base64}`
+        const picked = await chooseImagesBase64(remain)
+        picked.forEach((img) => {
+          this.images.push({
+            base64: img.base64,
+            mime: img.mime,
+            // base64 data URL 预览，两端通用（比 blob/wxfile 临时路径稳）
+            preview: `data:${img.mime};base64,${img.base64}`,
+          })
+        })
       } catch (e) {
         uni.showToast({ title: (e && e.message) || '选择图片失败', icon: 'none' })
       }
     },
-    removeImage() {
-      this.imageBase64 = null
-      this.imageMime = ''
-      this.imagePreview = ''
+    removeImage(i) {
+      this.images.splice(i, 1)
     },
     // Step 4/5：有图先 OCR，再走文字分析
     async onGoTap() {
       if (this.loading) return
-      if (!this.text.trim() && !this.imageBase64) {
+      if (!this.text.trim() && !this.images.length) {
         uni.showToast({ title: '请先输入文字或上传截图', icon: 'none' })
         return
       }
@@ -144,9 +152,10 @@ export default {
       this.result = null
       try {
         let finalText = this.text.trim()
-        if (this.imageBase64) {
+        if (this.images.length) {
           this.loadingLabel = '正在识别截图文字…'
-          const ocrText = await ocrImage(this.imageBase64, this.imageMime)
+          // 多张一次发后端，Gemini 当连续对话读 → 顺序/说话人/去重连贯
+          const ocrText = await ocrImages(this.images)
           if (ocrText === 'NOT_CHAT' || ocrText.length < 5) {
             if (!finalText) {
               throw new Error('图片里没有聊天对话，请上传微信/其他 App 的聊天截图')
@@ -277,30 +286,48 @@ export default {
 .drop-t { font-size: 26rpx; color: $st-muted; margin-bottom: 6rpx; }
 .drop-s { font-family: 'Space Mono', monospace; font-size: 20rpx; color: $st-dim; }
 
-/* 截图缩略图 */
+/* 截图缩略图（多张） */
+.thumbs {
+  display: flex;
+  flex-wrap: wrap;
+}
 .thumb {
   position: relative;
-  align-self: flex-start;
-  width: 55%;
+  width: 160rpx;
+  height: 160rpx;
+  margin: 0 18rpx 18rpx 0;
 }
 .thumb-img {
   width: 100%;
-  border-radius: 18rpx;
+  height: 100%;
+  border-radius: 16rpx;
   border: 2rpx solid $st-line;
   display: block;
 }
 .thumb-x {
   position: absolute;
-  top: -16rpx;
-  right: -16rpx;
-  width: 44rpx;
-  height: 44rpx;
-  line-height: 40rpx;
+  top: -14rpx;
+  right: -14rpx;
+  width: 40rpx;
+  height: 40rpx;
+  line-height: 36rpx;
   text-align: center;
   border-radius: 50%;
   background: $st-red;
   color: #fff;
-  font-size: 30rpx;
+  font-size: 28rpx;
+}
+.thumb-add {
+  width: 160rpx;
+  height: 160rpx;
+  margin-bottom: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2rpx dashed $st-line;
+  border-radius: 16rpx;
+  color: $st-dim;
+  font-size: 56rpx;
 }
 
 /* GO */

@@ -37,11 +37,14 @@ export function getViews() {
   return request('/api/views', { method: 'GET' })
 }
 
-// 截图 OCR —— 把 base64 图片发给后端 /api/ocr(Gemini)，返回识别出的对话文字
-export function ocrImage(base64, mime) {
+// 截图 OCR —— 把多张图片一次发给后端 /api/ocr(Gemini 当连续对话读)，返回合并后的对话文字
+// images: [{ base64, mime }]
+export function ocrImages(images) {
   return request('/api/ocr', {
     method: 'POST',
-    data: { imageData: base64, mimeType: mime || 'image/jpeg' },
+    data: {
+      images: images.map((i) => ({ imageData: i.base64, mimeType: i.mime })),
+    },
   }).then((data) => (data.text || '').trim())
 }
 

@@ -1,49 +1,56 @@
 // 选取图片并转成纯 base64（去 data 前缀），供 /api/ocr 用。
-// 条件编译屏蔽两端差异：H5 用 FileReader 读 blob；小程序用 getFileSystemManager 读文件。
+// 支持一次多选；条件编译屏蔽两端差异：H5 用 FileReader 读 blob；小程序用 getFileSystemManager 读文件。
 
-const MAX_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_SIZE = 5 * 1024 * 1024 // 单张 5MB
 
-export function chooseImageBase64() {
+/**
+ * 选取最多 count 张图片，返回 [{ base64, mime, path }]（取消返回 []，超 5MB 的自动跳过）。
+ */
+export function chooseImagesBase64(count = 1) {
   return new Promise((resolve, reject) => {
     uni.chooseImage({
-      count: 1,
+      count: Math.max(1, count),
       sizeType: ['compressed'],
-      success: (res) => {
-        const path = res.tempFilePaths && res.tempFilePaths[0]
-        const file = res.tempFiles && res.tempFiles[0]
-        if (!path) {
-          resolve(null)
-          return
+      success: async (res) => {
+        const paths = res.tempFilePaths || []
+        const files = res.tempFiles || []
+        try {
+          const out = []
+          for (let i = 0; i < paths.length; i++) {
+            const file = files[i]
+            if (file && file.size && file.size > MAX_SIZE) continue // 超大跳过
+            const mime = (file && file.type) || 'image/jpeg'
+            const base64 = await pathToBase64(paths[i])
+            out.push({ base64, mime, path: paths[i] })
+          }
+          resolve(out)
+        } catch (e) {
+          reject(new Error('读取图片失败'))
         }
-        if (file && file.size && file.size > MAX_SIZE) {
-          reject(new Error('图片不能超过 5MB'))
-          return
-        }
-        const mime = (file && file.type) || 'image/jpeg'
-
-        // #ifdef H5
-        blobUrlToBase64(path)
-          .then((base64) => resolve({ base64, mime, path }))
-          .catch(() => reject(new Error('读取图片失败')))
-        // #endif
-
-        // #ifndef H5
-        uni.getFileSystemManager().readFile({
-          filePath: path,
-          encoding: 'base64',
-          success: (r) => resolve({ base64: r.data, mime, path }),
-          fail: () => reject(new Error('读取图片失败')),
-        })
-        // #endif
       },
       fail: (err) => {
-        // 用户主动取消不算错误
         const msg = (err && err.errMsg) || ''
-        if (/cancel/i.test(msg)) resolve(null)
+        if (/cancel/i.test(msg)) resolve([])
         else reject(new Error(msg || '选择图片失败'))
       },
     })
   })
+}
+
+function pathToBase64(path) {
+  // #ifdef H5
+  return blobUrlToBase64(path)
+  // #endif
+  // #ifndef H5
+  return new Promise((resolve, reject) => {
+    uni.getFileSystemManager().readFile({
+      filePath: path,
+      encoding: 'base64',
+      success: (r) => resolve(r.data),
+      fail: () => reject(new Error('读取图片失败')),
+    })
+  })
+  // #endif
 }
 
 // #ifdef H5

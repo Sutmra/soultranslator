@@ -144,8 +144,9 @@
   .drop .ic{font-size:26px;}
   .drop .t{font-size:14px;margin-top:8px;}
   .drop .s{font-size:11px;color:var(--dim);margin-top:3px;font-family:var(--mono);}
-  .thumb{position:relative;display:inline-block;margin-top:6px;}
-  .thumb img{max-height:160px;max-width:100%;border-radius:12px;border:1px solid var(--line);display:block;}
+  #thumbBox{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;}
+  .thumb{position:relative;display:inline-block;}
+  .thumb img{width:120px;height:120px;object-fit:cover;border-radius:12px;border:1px solid var(--line);display:block;}
   .thumb .x{position:absolute;top:-10px;right:-10px;width:28px;height:28px;border-radius:50%;background:var(--mag);color:#fff;border:none;font-size:15px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.5);}
 
   /* ---------- GO BUTTON ---------- */
@@ -282,13 +283,13 @@
   <div class="step"><span class="no">03</span><h2>投喂对话</h2><span class="hint">TEXT / IMG</span></div>
   <div class="inputgrid">
     <textarea id="text" placeholder="把 TA 说的话粘进来…&#10;例如：「在忙，回头聊」「随便你吧」「你开心就好」「我没生气啊」"></textarea>
-    <div class="orline">或 上传聊天截图（AI 自动 OCR 识别）</div>
+    <div class="orline">或 上传聊天截图（可多张，AI 自动 OCR 识别）</div>
     <div class="drop" id="drop">
       <div class="ic">📸</div>
-      <div class="t">点击 / 拖拽上传聊天截图</div>
-      <div class="s">.jpg .png · ≤ 5MB</div>
+      <div class="t">点击 / 拖拽上传聊天截图（可多张）</div>
+      <div class="s">.jpg .png · ≤ 5MB · 最多 6 张</div>
     </div>
-    <input type="file" id="file" accept="image/png,image/jpeg" style="display:none">
+    <input type="file" id="file" accept="image/png,image/jpeg" multiple style="display:none">
     <div id="thumbBox"></div>
   </div>
 
@@ -356,9 +357,8 @@ const DUNBAR_SLIDER_CONFIG = {
 };
 let scene = "intimate";
 let level = 1;
-let imageData = null;        // 压缩后 base64，用于展示
-let imageDataOcr = null;     // 原图 base64，用于 OCR
-let imageMime = null;
+let images = [];             // [{ ocr, mime, preview }] ocr=原图base64(给OCR)，preview=压缩jpeg base64(展示)
+const MAX_IMAGES = 6;
 let busy = false;
 
 /* ---------------- WARMUP ---------------- */
@@ -445,26 +445,40 @@ const thumbBox=document.getElementById('thumbBox');
 drop.onclick=()=>{ if(!busy) fileInput.click(); };
 ['dragover','dragenter'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('hot');}));
 ['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('hot');}));
-drop.addEventListener('drop',ev=>{ if(ev.dataTransfer.files[0]) handleFile(ev.dataTransfer.files[0]); });
-fileInput.onchange=()=>{ if(fileInput.files[0]) handleFile(fileInput.files[0]); };
+drop.addEventListener('drop',ev=>{ if(ev.dataTransfer.files.length) handleFiles(ev.dataTransfer.files); });
+fileInput.onchange=()=>{ if(fileInput.files.length) handleFiles(fileInput.files); fileInput.value=''; };
 
-function handleFile(f){
-  if(!/image\/(png|jpeg)/.test(f.type)){ toast("只支持 jpg / png 图片"); return; }
-  if(f.size>10*1024*1024){ toast("图片不能超过 10MB"); return; }
-  const reader=new FileReader();
-  reader.onload=async()=>{
-    const original=reader.result;
-    const originalBase64=original.split(',')[1];
-    // 原图给 OCR（保持清晰度），压缩图给缩略图展示
-    imageDataOcr=originalBase64;
-    imageMime=f.type;
-    toast("正在压缩图片…");
-    const {data,mime}=await compressImage(originalBase64, f.type);
-    imageData=data;
-    thumbBox.innerHTML=`<div class="thumb"><img src="data:${mime};base64,${data}"><button class="x" id="rmImg">×</button></div>`;
-    document.getElementById('rmImg').onclick=()=>{ imageData=null;imageDataOcr=null;imageMime=null;thumbBox.innerHTML='';fileInput.value=''; };
-  };
-  reader.readAsDataURL(f);
+async function handleFiles(fileList){
+  for(const f of Array.from(fileList)){
+    if(images.length>=MAX_IMAGES){ toast(`最多上传 ${MAX_IMAGES} 张`); break; }
+    if(!/image\/(png|jpeg)/.test(f.type)){ toast("只支持 jpg / png 图片"); continue; }
+    if(f.size>10*1024*1024){ toast("单张不能超过 10MB"); continue; }
+    await addImage(f);
+  }
+}
+
+function addImage(f){
+  return new Promise(resolve=>{
+    const reader=new FileReader();
+    reader.onload=async()=>{
+      const originalBase64=reader.result.split(',')[1];
+      // 原图给 OCR（保持清晰度），压缩图给缩略图展示
+      const {data}=await compressImage(originalBase64, f.type);
+      images.push({ ocr:originalBase64, mime:f.type, preview:data });
+      renderThumbs();
+      resolve();
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+function renderThumbs(){
+  thumbBox.innerHTML = images.map((im,i)=>
+    `<div class="thumb"><img src="data:image/jpeg;base64,${im.preview}"><button class="x" data-i="${i}">×</button></div>`
+  ).join('');
+  thumbBox.querySelectorAll('.x').forEach(b=>{
+    b.onclick=()=>{ if(busy) return; images.splice(+b.dataset.i,1); renderThumbs(); };
+  });
 }
 
 async function compressImage(base64, mime, maxPx=720, quality=0.65){
@@ -556,12 +570,12 @@ function buildPrompt(){
 }`;
 }
 
-/* ---------------- OCR (Gemini) ---------------- */
-async function ocrImage(base64, mime){
+/* ---------------- OCR (Gemini，多图一次发，后端当连续对话读) ---------------- */
+async function ocrImages(imgs){
   const resp = await fetch(CONFIG.API_BASE.replace('/api/chat','/api/ocr'), {
     method: "POST",
     headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ imageData: base64, mimeType: mime })
+    body: JSON.stringify({ images: imgs.map(im=>({ imageData: im.ocr, mimeType: im.mime })) })
   });
   const data = await resp.json();
   if(!resp.ok) throw new Error(data.error || "OCR 服务异常");
@@ -571,7 +585,7 @@ async function ocrImage(base64, mime){
 /* ---------------- API CALL ---------------- */
 async function decode(){
   const text=document.getElementById('text').value.trim();
-  if(!text && !imageData){ toast("请先输入文字或上传聊天截图"); return; }
+  if(!text && !images.length){ toast("请先输入文字或上传聊天截图"); return; }
 
   busy=true;
   const btn=document.getElementById('go');
@@ -589,9 +603,9 @@ async function decode(){
   try{
     // 有图时先用 Gemini OCR 提取对话文字
     let finalText = text;
-    if(imageData){
+    if(images.length){
       btn.querySelector('span').textContent="正在识别截图文字…";
-      const ocrText = await ocrImage(imageDataOcr, imageMime);
+      const ocrText = await ocrImages(images);
       if(ocrText === "NOT_CHAT" || ocrText.length < 5){
         if(text){
           toast("截图未识别到对话，仅分析文字输入");

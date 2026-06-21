@@ -1,5 +1,7 @@
 const express = require("express");
 const cors = require("cors");
+const { buildSystemPrompt, getScenesPayload } = require("./prompt");
+const { SCHOOL_ROLES } = require("./school");
 
 const app = express();
 app.use(cors());
@@ -62,6 +64,11 @@ app.get("/api/models", async (req, res) => {
   }
 });
 
+// 场景配置下发（D11-B）：前端拉这个动态渲染场景卡 + 关系滑块，加场景只改后端
+app.get("/api/scenes", (req, res) => {
+  res.json(getScenesPayload());
+});
+
 // DeepSeek 分析代理
 app.post("/api/chat", async (req, res) => {
   if (!DEEPSEEK_API_KEY) return res.status(500).json({ error: "DEEPSEEK_API_KEY not configured" });
@@ -73,6 +80,52 @@ app.post("/api/chat", async (req, res) => {
     });
     const data = await response.json();
     res.status(response.status).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DeepSeek 分析（D11-B 大脑上移）：入参 { scene, level, text }，后端内置 prompt → DeepSeek → 结构化 JSON
+// 与原前端 buildPrompt + /api/chat 调用严格等价（回归保证）；/api/chat 保留兼容、逐步弃用。
+app.post("/api/analyze", async (req, res) => {
+  if (!DEEPSEEK_API_KEY) return res.status(500).json({ error: "DEEPSEEK_API_KEY not configured" });
+
+  const { scene, role, text } = req.body || {};
+  const level = Number(req.body && req.body.level);
+  if (!scene || !(level >= 1 && level <= 4) || !text || !String(text).trim()) {
+    return res.status(400).json({ error: "scene / level(1~4) / text required" });
+  }
+  // 学校场景需带合法 role（家长/学生/同事老师/校领导）
+  if (scene === "school" && !SCHOOL_ROLES[role]) {
+    return res.status(400).json({ error: "school scene requires valid role" });
+  }
+
+  try {
+    const response = await fetch(DEEPSEEK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + DEEPSEEK_API_KEY },
+      body: JSON.stringify({
+        model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+        messages: [
+          { role: "system", content: buildSystemPrompt(scene, level, role) },
+          { role: "user", content: `【对方说的话】：${text}` },
+        ],
+        temperature: 1.0,
+        max_tokens: 1500,
+        response_format: { type: "json_object" },
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      const msg = data.error?.message || JSON.stringify(data).slice(0, 200);
+      return res.status(response.status).json({ error: "DeepSeek API error: " + msg });
+    }
+    const raw = data.choices?.[0]?.message?.content || "";
+    const clean = raw.replace(/```json|```/g, "").trim();
+    const start = clean.indexOf("{");
+    const end = clean.lastIndexOf("}");
+    if (start < 0 || end < 0) return res.status(502).json({ error: "返回内容解析失败" });
+    res.json(JSON.parse(clean.slice(start, end + 1)));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

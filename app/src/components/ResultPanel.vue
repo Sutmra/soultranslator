@@ -12,7 +12,7 @@
         <text class="v mag">{{ a.motivation || '—' }}</text>
       </view>
       <view class="field" v-if="a.dunbar_audit">
-        <text class="k">📊 邓巴能量审计 / DUNBAR AUDIT</text>
+        <text class="k">{{ auditLabel }}</text>
         <text class="v cyan">{{ a.dunbar_audit }}</text>
       </view>
       <view class="field">
@@ -36,7 +36,7 @@
         <text class="light">{{ lightEmoji }}</text>
         <view class="t-info">
           <text class="rating">{{ rs.status_title || rs.rating || '—' }}</text>
-          <text class="winrate">胜率预测：<text class="win-b">{{ rs.winning_rate || rs.win_rate || '—' }}</text></text>
+          <text class="winrate">{{ winLabel }}：<text class="win-b">{{ rs.winning_rate || rs.win_rate || '—' }}</text></text>
         </view>
       </view>
     </view>
@@ -63,6 +63,7 @@ export default {
   name: 'ResultPanel',
   props: {
     data: { type: Object, default: null },
+    isSchool: { type: Boolean, default: false }, // 学校模式换教育语境标签
   },
   data() {
     return {
@@ -86,12 +87,21 @@ export default {
     reps() {
       return (this.data && this.data.reply_scripts) || []
     },
+    auditLabel() {
+      return this.isSchool ? '🎓 师德边界审计 / BOUNDARY AUDIT' : '📊 邓巴能量审计 / DUNBAR AUDIT'
+    },
+    winLabel() {
+      return this.isSchool ? '化解把握' : '胜率预测'
+    },
     temps() {
       const m = this.m
+      const labels = this.isSchool
+        ? ['情绪强度', '攻击施压', '诉求不合理度']
+        : ['焦虑值', '隐性攻击 / 阴阳值', '安全感缺乏度']
       return [
-        { label: '焦虑值', val: this.clamp(m.anxiety), color: '#37e6ff' },
-        { label: '隐性攻击 / 阴阳值', val: this.clamp(m.passive_aggressive ?? m.passive_aggression), color: '#ff2e8b' },
-        { label: '安全感缺乏度', val: this.clamp(m.insecurity), color: '#ffc53a' },
+        { label: labels[0], val: this.clamp(m.anxiety), color: '#37e6ff' },
+        { label: labels[1], val: this.clamp(m.passive_aggressive ?? m.passive_aggression), color: '#ff2e8b' },
+        { label: labels[2], val: this.clamp(m.insecurity), color: '#ffc53a' },
       ]
     },
     lightEmoji() {

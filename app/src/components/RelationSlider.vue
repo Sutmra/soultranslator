@@ -38,18 +38,19 @@
       </view>
     </view>
 
-    <!-- 邓巴容量提示 -->
-    <text class="dunbar-hint">[ 邓巴容量：{{ dunbar }} ]</text>
+    <!-- 邓巴容量提示（学校场景无此项时隐藏） -->
+    <text v-if="dunbar" class="dunbar-hint">[ 邓巴容量：{{ dunbar }} ]</text>
   </view>
 </template>
 
 <script>
-import { DUNBAR_SLIDER_CONFIG, DUNBAR_CAPACITY } from '@/utils/sceneConfig'
-
 export default {
   name: 'RelationSlider',
   props: {
-    scene: { type: String, default: 'intimate' },
+    // 当前场景的档位名/副文案/邓巴容量，由父级从后端 /api/scenes 取后传入
+    levels: { type: Array, default: () => [] },
+    tips: { type: Array, default: () => [] },
+    dunbarCapacity: { type: Array, default: () => [] },
     modelValue: { type: Number, default: 1 },
   },
   emits: ['update:modelValue'],
@@ -57,17 +58,14 @@ export default {
     return { rect: null, dragging: false }
   },
   computed: {
-    cfg() {
-      return DUNBAR_SLIDER_CONFIG[this.scene] || DUNBAR_SLIDER_CONFIG.intimate
-    },
     levelLabel() {
-      return this.cfg.levels[this.modelValue - 1]
+      return this.levels[this.modelValue - 1] || ''
     },
     levelTip() {
-      return this.cfg.tips[this.modelValue - 1]
+      return this.tips[this.modelValue - 1] || ''
     },
     dunbar() {
-      return DUNBAR_CAPACITY[this.modelValue - 1]
+      return this.dunbarCapacity[this.modelValue - 1] || ''
     },
     pct() {
       return ((this.modelValue - 1) / 3) * 100

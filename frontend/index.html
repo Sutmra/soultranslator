@@ -88,6 +88,11 @@
   .tab.on .t{color:var(--acid);}
   .tab .algo{position:absolute;top:10px;right:10px;font-family:var(--mono);font-size:9px;color:var(--dim);opacity:0;transition:.2s;}
   .tab.on .algo{opacity:1;color:var(--acid-dim);}
+  /* 模式切换：分段控件（紧凑胶囊，按内容宽度左对齐，不撑满 980px） */
+  .segctl{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px;margin-bottom:14px;}
+  .seg{cursor:pointer;text-align:center;padding:9px 26px;border-radius:999px;color:var(--muted);font-size:14px;font-weight:700;transition:.2s;white-space:nowrap;}
+  .seg.on{background:var(--acid);color:#08090b;}
+  .seg:not(.on):hover{color:var(--ink);}
 
   /* ---------- SLIDER ---------- */
   .sliderbox{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:20px;}
@@ -241,29 +246,19 @@
 
   <div class="rule"></div>
 
-  <!-- STEP 1 SCENE -->
-  <div class="step"><span class="no">01</span><h2>选择场景</h2><span class="hint">SCENE</span></div>
-  <div class="tabs" id="tabs">
-    <div class="tab on" data-scene="intimate">
-      <span class="algo">// red-green light</span>
-      <div class="emo">❤️</div><div class="t">恋爱/暧昧</div><div class="d">看清红绿灯，拒绝精神内耗</div>
-    </div>
-    <div class="tab" data-scene="casual">
-      <span class="algo">// decode shade</span>
-      <div class="emo">👥</div><div class="t">朋友/人情</div><div class="d">拒绝无效社交，手撕阴阳怪气</div>
-    </div>
-    <div class="tab" data-scene="authority">
-      <span class="algo">// anti-pua</span>
-      <div class="emo">⚖️</div><div class="t">老板/导师</div><div class="d">高情商向上管理，反职场PUA</div>
-    </div>
-    <div class="tab" data-scene="colleague">
-      <span class="algo">// no blame</span>
-      <div class="emo">💼</div><div class="t">同事/客户</div><div class="d">对事不对人，严防甩锅背黑锅</div>
-    </div>
+  <!-- 模式切换：分段控件（通用四象限 / 学校场景·教师端） -->
+  <div class="segctl" id="modebar">
+    <div class="seg on" data-mode="general">💬 通用</div>
+    <div class="seg" data-mode="school">🎓 学校场景</div>
   </div>
 
-  <!-- STEP 2 RELATIONSHIP -->
-  <div class="step"><span class="no">02</span><h2>关系深度</h2><span class="hint">DUNBAR ×4</span></div>
+  <!-- STEP 1 SCENE / ROLE -->
+  <div class="step"><span class="no">01</span><h2 id="step1h2">选择场景</h2><span class="hint" id="step1hint">SCENE</span></div>
+  <div class="tabs" id="tabs"></div>
+  <div id="tabsHint" style="padding:16px;color:#6b7280;font-size:13px;text-align:center">加载场景中…</div>
+
+  <!-- STEP 2 RELATIONSHIP / STATE -->
+  <div class="step"><span class="no">02</span><h2 id="step2h2">关系深度</h2><span class="hint" id="step2hint">DUNBAR ×4</span></div>
   <div class="sliderbox" style="position:relative;">
     <!-- LEVEL 标签：绝对定位钉死右上角，完全脱离文本流 -->
     <div id="lvlNo" style="position:absolute;top:20px;right:20px;font-family:var(--mono);font-size:12px;color:var(--dim);z-index:10;white-space:nowrap;">LEVEL 1 / 4</div>
@@ -317,45 +312,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 
 /* ---------------- STATE ---------------- */
-const DUNBAR_SLIDER_CONFIG = {
-  intimate: {
-    levels: ["雾里看花","上头期间","拉扯交替","命运绑定"],
-    tips: [
-      "刚加微信 · 朋友圈点赞试探",
-      "分享欲爆棚 · 深夜高频接梗",
-      "忽冷忽热 · 试探吃醋内耗高发",
-      "绝对托底 · 毫无保留的终极伴侣"
-    ]
-  },
-  casual: {
-    levels: ["点头之交","日常搭子","人情世故","生死之交"],
-    tips: [
-      "同学邻居 · 点赞式社交客套",
-      "饭搭子/同好 · 轻松玩梗不走心",
-      "亲戚越界催婚 · 塑料朋友隐性阴阳",
-      "铁磁闺蜜 · 无条件信任共享秘密"
-    ]
-  },
-  authority: {
-    levels: ["职场新人","靠谱骨干","职场渡劫","嫡系盟友"],
-    tips: [
-      "处于观察期 · 谨言慎行立人设",
-      "核心执行主力 · 频繁承接业务压力",
-      "领导画大饼 · 直面甩锅与无理施压",
-      "进入权力核心圈 · 深度绑定晋升"
-    ]
-  },
-  colleague: {
-    levels: ["跨部门/甲方","平级搭档","业务扯皮","战壕搭子"],
-    tips: [
-      "纯利益交换 · 沟通滴水不漏留凭证",
-      "低头不见抬头见 · 维系客套不交深",
-      "排期推诿 · 团队甩锅需硬核推进",
-      "办公室死党 · 悄悄分享八卦抱团吐槽"
-    ]
-  }
-};
+// 场景配置由后端 /api/scenes 下发（D11-B 单一来源），加载后填充；不再前端硬编码
+let sceneCfg = {};        // { key: { levels:[], tips:[] } }
+let dunbarCapacity = [];  // 4 档邓巴容量
+let scenesList = [];      // [{ key, emoji, title, desc, algo, levels, tips }]
+let schoolData = null;    // { key, title, roles:[{key,emoji,title,algo,desc,levels,tips}] } 学校场景
 let scene = "intimate";
+let mode = "general";     // 'general' 通用四象限 / 'school' 学校场景·教师端
+let role = "parent";      // 学校模式下选中的教师端角色
 let level = 1;
 let images = [];             // [{ ocr, mime, preview }] ocr=原图base64(给OCR)，preview=压缩jpeg base64(展示)
 const MAX_IMAGES = 6;
@@ -395,22 +359,66 @@ const CONFIG = {
   API_KEY:    "",
   MODEL:      "deepseek-chat",
 };
+// 后端根地址（由 API_BASE 去掉 /api/chat 推出），供 /api/scenes、/api/analyze 用
+const API_ROOT = CONFIG.API_BASE.replace(/\/api\/chat$/, "");
 
-/* ---------------- TABS ---------------- */
-document.querySelectorAll('.tab').forEach(t=>{
-  t.onclick=()=>{
-    if(busy) return;
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
-    t.classList.add('on');
-    scene = t.dataset.scene;
-    syncSlider();
-  };
-});
+/* ---------------- TABS（从 /api/scenes 动态渲染；通用=场景卡，学校=角色卡） ---------------- */
+function renderTabs(){
+  const box = document.getElementById('tabs');
+  const list = mode === 'school' ? (schoolData ? schoolData.roles : []) : scenesList;
+  const activeKey = mode === 'school' ? role : scene;
+  box.innerHTML = list.map(s =>
+    `<div class="tab${s.key===activeKey?' on':''}" data-key="${s.key}">`
+    + `<span class="algo">${s.algo||''}</span>`
+    + `<div class="emo">${s.emoji||''}</div><div class="t">${s.title||''}</div><div class="d">${s.desc||''}</div>`
+    + `</div>`
+  ).join('');
+  box.querySelectorAll('.tab').forEach(t=>{
+    t.onclick=()=>{
+      if(busy) return;
+      box.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+      t.classList.add('on');
+      if(mode === 'school') role = t.dataset.key; else scene = t.dataset.key;
+      syncSlider();
+    };
+  });
+}
+
+function applyScenes(data){
+  if(!data || !Array.isArray(data.scenes) || !data.scenes.length) return false;
+  scenesList = data.scenes;
+  if(Array.isArray(data.dunbarCapacity)) dunbarCapacity = data.dunbarCapacity;
+  sceneCfg = {};
+  scenesList.forEach(s => { sceneCfg[s.key] = { levels: s.levels, tips: s.tips }; });
+  if(!sceneCfg[scene]) scene = scenesList[0].key;
+  schoolData = data.school || null; // 学校场景块（B3）
+  if(schoolData && !schoolData.roles.find(r => r.key === role)) role = schoolData.roles[0].key;
+  renderTabs();
+  syncSlider();
+  const hint = document.getElementById('tabsHint');
+  if(hint) hint.style.display = 'none';
+  return true;
+}
+
+async function loadScenes(){
+  // 先用本地缓存即时渲染（离线/冷启动也有内容），再后台拉最新覆盖
+  try{ const cached = JSON.parse(localStorage.getItem('st_scenes')||'null'); if(cached) applyScenes(cached); }catch(e){}
+  try{
+    const r = await fetch(API_ROOT + "/api/scenes");
+    const data = await r.json();
+    if(applyScenes(data)){ try{ localStorage.setItem('st_scenes', JSON.stringify(data)); }catch(e){} }
+  }catch(e){
+    const hint = document.getElementById('tabsHint');
+    if(hint && !scenesList.length){
+      hint.innerHTML = '场景加载失败 · <a href="#" id="retryScenes" style="color:#c7f53a">点此重试</a>';
+      const rl = document.getElementById('retryScenes');
+      if(rl) rl.onclick = (ev)=>{ ev.preventDefault(); loadScenes(); };
+    }
+  }
+}
 
 /* ---------------- SLIDER ---------------- */
 const range=document.getElementById('level');
-
-const DUNBAR_CAPACITY = ["150人最外圈","50人社交圈","15人核心圈","5人至亲圈"];
 
 function updateTooltipPos(){
   const min=+range.min, max=+range.max, val=+range.value;
@@ -424,19 +432,47 @@ function updateTooltipPos(){
 }
 
 function syncSlider(){
-  const cfg = DUNBAR_SLIDER_CONFIG[scene];
   level = +range.value;
+  document.getElementById('lvlNo').textContent = `LEVEL ${level} / 4`;
+  // 通用=场景档位（带邓巴容量）；学校=该角色的配合↔难缠度（无邓巴）
+  let cfg, showDunbar;
+  if(mode === 'school'){
+    const r = schoolData && schoolData.roles.find(x => x.key === role);
+    cfg = r ? { levels: r.levels, tips: r.tips } : null;
+    showDunbar = false;
+  } else {
+    cfg = sceneCfg[scene];
+    showDunbar = true;
+  }
+  if(!cfg) return; // 配置未加载完，稍后由 applyScenes 触发
   document.getElementById('lvlLabel').textContent = cfg.levels[level-1];
   document.getElementById('lvlSub').textContent   = cfg.tips[level-1];
-  document.getElementById('lvlNo').textContent    = `LEVEL ${level} / 4`;
-  document.getElementById('dunbarHint').textContent = `[ 邓巴容量：${DUNBAR_CAPACITY[level-1]} ]`;
   document.getElementById('sliderTooltip').textContent = cfg.levels[level-1];
+  const dh = document.getElementById('dunbarHint');
+  if(showDunbar){ dh.style.display = ''; dh.textContent = `[ 邓巴容量：${dunbarCapacity[level-1]||''} ]`; }
+  else { dh.style.display = 'none'; }
   updateTooltipPos();
 }
+
+/* ---------------- MODE 切换：通用 / 学校场景 ---------------- */
+function switchMode(m){
+  if(busy || mode === m) return;
+  mode = m;
+  level = 1; range.value = 1;
+  document.querySelectorAll('#modebar .seg').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  document.getElementById('step1h2').textContent   = m === 'school' ? '选择对方' : '选择场景';
+  document.getElementById('step1hint').textContent = m === 'school' ? 'ROLE' : 'SCENE';
+  document.getElementById('step2h2').textContent   = m === 'school' ? '对方状态' : '关系深度';
+  document.getElementById('step2hint').textContent = m === 'school' ? 'LEVEL ×4' : 'DUNBAR ×4';
+  renderTabs();
+  syncSlider();
+}
+document.querySelectorAll('#modebar .seg').forEach(b => { b.onclick = () => switchMode(b.dataset.mode); });
 
 range.oninput=()=>{ if(!busy) syncSlider(); };
 window.addEventListener('resize', updateTooltipPos);
 syncSlider();
+loadScenes(); // 拉后端场景配置，渲染场景卡 + 滑块文案
 
 /* ---------------- IMAGE UPLOAD ---------------- */
 const drop=document.getElementById('drop');
@@ -506,70 +542,6 @@ function toast(msg){
   toastTimer=setTimeout(()=>el.classList.remove('show'),2000);
 }
 
-/* ---------------- PROMPT ROUTING ---------------- */
-function buildPrompt(){
-  const cfg = DUNBAR_SLIDER_CONFIG[scene];
-  const levelLabel = cfg.levels[level-1];
-  const levelTip   = cfg.tips[level-1];
-  const dunbarCap  = DUNBAR_CAPACITY[level-1];
-
-  return `# Role
-你是由社会心理学家与顶级人际沟通专家联合打造的 AI 情绪翻译器——"SoulTranslator (V0.2 完全体)"。你的任务是帮助用户"看清局势，拒绝内耗，夺回聊天主动权"。
-
-# 当前用户参数
-- 社交场域（scene_type）：${scene}
-- 关系深度（relationship_level）：LEVEL ${level} / 4 —— ${levelLabel}（${levelTip}）
-- 邓巴容量圈：${dunbarCap}
-
-# Core Framework: 邓巴数与社会场域联动矩阵
-
-## 恋爱/暧昧 (intimate)
-- LEVEL 1 雾里看花 → 150人最外圈：高情商克制，朦胧可得性，禁止暴露底牌
-- LEVEL 2 上头期间 → 50人社交圈：废话接梗、高频多巴胺情绪溢价
-- LEVEL 3 拉扯交替 → 15人核心圈：【核心内耗区】清醒军师视角，分析战术拉扯vs冷暴力，强情绪反拿捏
-- LEVEL 4 命运绑定 → 5人至亲圈：极度真诚直接，巩固安全感，过滤一切小花招
-
-## 朋友/人情 (casual)
-- LEVEL 1 点头之交 → 客套礼貌，两米安全边界
-- LEVEL 2 日常搭子 → 轻松玩梗，不走心
-- LEVEL 3 人情世故 → 防守手撕，体面拒绝，降维打击阴阳怪气
-- LEVEL 4 生死之交 → 绝对信任，情感托底
-
-## 老板/导师 (authority)
-- LEVEL 1 职场新人 → 极度敬业严谨，建立靠谱执行力人设
-- LEVEL 2 靠谱骨干 → 专业无瑕疵，展现担当同时守住边界
-- LEVEL 3 职场渡劫 → 高级太极话术，给足面子，优雅防御反PUA
-- LEVEL 4 嫡系盟友 → 战略同步感，站在领导视角协同
-
-## 同事/客户 (colleague)
-- LEVEL 1 跨部门/甲方 → 滴水不漏，留存合规凭证
-- LEVEL 2 平级搭档 → 对事不对人，绝不交浅言深
-- LEVEL 3 业务扯皮 → 拿数据和规范压人，有理有据免责
-- LEVEL 4 战壕搭子 → 允许私密放松，共享八卦，抱团吐槽
-
-# 输出规则
-严格只返回一个合法 JSON 对象，禁止任何 markdown 代码块或多余解释。结构如下：
-{
-  "analysis": {
-    "fact": "剥离情绪噪声后的真实事实，1-2句，犀利直接",
-    "motivation": "对方当前的底层心理动机，1-2句，要毒舌精准",
-    "dunbar_audit": "📊 邓巴能量错位警告：基于用户选择的${dunbarCap}（LEVEL ${level}）与对方语义表现的圈层错位，给出一句直击灵魂的社交能量审计结论，建议用户采取哪张回复脚本",
-    "metrics": { "anxiety": 0到100整数, "passive_aggressive": 0到100整数, "insecurity": 0到100整数 }
-  },
-  "relationship_status": {
-    "light_color": "red或yellow或green三选一",
-    "status_title": "基于邓巴圈层错位的核心局势判定短语",
-    "winning_rate": "带%的胜率预测，如88%"
-  },
-  "reply_scripts": [
-    { "strategy": "直球推进 🚀", "content": "紧扣LEVEL ${level}分寸感的推进话术，60字内真人口吻" },
-    { "strategy": "温柔共情 ❤️", "content": "紧扣LEVEL ${level}分寸感的共情话术，60字内真人口吻" },
-    { "strategy": "反向拿捏 🎭", "content": "紧扣LEVEL ${level}分寸感的情绪太极/反拿捏话术，夺回主动权，60字内" },
-    { "strategy": "体面退场 🛡️", "content": "紧扣LEVEL ${level}分寸感的优雅收尾话术，60字内真人口吻" }
-  ]
-}`;
-}
-
 /* ---------------- OCR (Gemini，多图一次发，后端当连续对话读) ---------------- */
 async function ocrImages(imgs){
   const resp = await fetch(CONFIG.API_BASE.replace('/api/chat','/api/ocr'), {
@@ -626,28 +598,20 @@ async function decode(){
     const headers={"Content-Type":"application/json"};
     if(CONFIG.API_KEY) headers["Authorization"]="Bearer "+CONFIG.API_KEY;
 
-    const resp=await fetch(CONFIG.API_BASE,{
+    const resp=await fetch(API_ROOT + "/api/analyze",{
       method:"POST",
       headers,
-      body:JSON.stringify({
-        model: CONFIG.MODEL,
-        messages:[
-          {role:"system",content:buildPrompt()},
-          {role:"user",content:`【对方说的话】：${finalText}`}
-        ],
-        temperature:1.0,
-        max_tokens:1500,
-        response_format:{type:"json_object"}
-      })
+      body:JSON.stringify(
+        mode === 'school'
+          ? { scene:'school', role, level, text: finalText }
+          : { scene, level, text: finalText }
+      )
     });
     if(!resp.ok){
       const t=await resp.text();
       throw new Error("HTTP "+resp.status+" "+t.slice(0,120));
     }
-    const data=await resp.json();
-    const raw=data.choices?.[0]?.message?.content || "";
-    const clean=raw.replace(/```json|```/g,"").trim();
-    const json=JSON.parse(clean.slice(clean.indexOf('{'), clean.lastIndexOf('}')+1));
+    const json=await resp.json(); // 后端已解析为结构化 JSON
     render(json);
   }catch(err){
     console.error(err);
@@ -682,6 +646,7 @@ function render(j){
   const reps=j.reply_scripts||[];
   const c=(rs.light_color||'yellow').toLowerCase();
   const emoji=c==='green'?'🟢':c==='red'?'🔴':'🟡';
+  const isSchool = mode === 'school'; // 学校模式换教育语境标签
 
   let html=`
   <!-- MODULE A -->
@@ -689,13 +654,13 @@ function render(j){
     <div class="ctitle">🪞 真心话照妖镜<span class="tag">MODULE A</span></div>
     <div class="field"><div class="k">底层事实 / FACTS</div><div class="v">${esc(a.fact||a.facts||'')}</div></div>
     <div class="field motive"><div class="k">真实心理动机 / MOTIVE</div><div class="v">${esc(a.motivation||'')}</div></div>
-    ${a.dunbar_audit?`<div class="field" style="margin-bottom:16px"><div class="k">📊 邓巴能量审计 / DUNBAR AUDIT</div><div class="v" style="border-left-color:var(--cyan);font-size:13.5px;line-height:1.7">${esc(a.dunbar_audit)}</div></div>`:''}
+    ${a.dunbar_audit?`<div class="field" style="margin-bottom:16px"><div class="k">${isSchool?'🎓 师德边界审计 / BOUNDARY AUDIT':'📊 邓巴能量审计 / DUNBAR AUDIT'}</div><div class="v" style="border-left-color:var(--cyan);font-size:13.5px;line-height:1.7">${esc(a.dunbar_audit)}</div></div>`:''}
     <div class="field" style="margin-bottom:0">
       <div class="k">情绪温度计 / THERMOMETER</div>
       <div class="temps">
-        ${tempBar("焦虑值",m.anxiety,"var(--cyan)")}
-        ${tempBar("隐性攻击 / 阴阳值",m.passive_aggressive||m.passive_aggression,"var(--mag)")}
-        ${tempBar("安全感缺乏度",m.insecurity,"var(--yellow)")}
+        ${tempBar(isSchool?"情绪强度":"焦虑值",m.anxiety,"var(--cyan)")}
+        ${tempBar(isSchool?"攻击施压":"隐性攻击 / 阴阳值",m.passive_aggressive||m.passive_aggression,"var(--mag)")}
+        ${tempBar(isSchool?"诉求不合理度":"安全感缺乏度",m.insecurity,"var(--yellow)")}
       </div>
     </div>
   </div>
@@ -707,7 +672,7 @@ function render(j){
       <div class="badge-light ${c}">${emoji}</div>
       <div class="info">
         <div class="rating">${esc(rs.status_title||rs.rating||'')}</div>
-        <div class="winrate">胜率预测：<b>${esc(rs.winning_rate||rs.win_rate||'')}</b></div>
+        <div class="winrate">${isSchool?'化解把握':'胜率预测'}：<b>${esc(rs.winning_rate||rs.win_rate||'')}</b></div>
       </div>
     </div>
   </div>

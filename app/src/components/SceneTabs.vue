@@ -16,16 +16,14 @@
 </template>
 
 <script>
-import { SCENES } from '@/utils/sceneConfig'
 export default {
   name: 'SceneTabs',
   props: {
+    // 场景卡片数据，由父级从后端 /api/scenes 拉取后传入
+    scenes: { type: Array, default: () => [] },
     modelValue: { type: String, default: 'intimate' },
   },
   emits: ['update:modelValue'],
-  data() {
-    return { scenes: SCENES }
-  },
 }
 </script>
 

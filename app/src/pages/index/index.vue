@@ -9,13 +9,24 @@
 
     <view class="rule"></view>
 
-    <!-- STEP 01 SCENE -->
-    <view class="step"><text class="no">01</text><text class="h2">选择场景</text><text class="hint">SCENE</text></view>
-    <scene-tabs v-model="scene" />
+    <!-- 模式切换：分段控件（通用 / 学校场景·教师端） -->
+    <view class="segctl">
+      <view class="seg" :class="{ on: mode==='general' }" @click="switchMode('general')">💬 通用</view>
+      <view class="seg" :class="{ on: mode==='school' }" @click="switchMode('school')">🎓 学校场景</view>
+    </view>
 
-    <!-- STEP 02 RELATIONSHIP -->
-    <view class="step"><text class="no">02</text><text class="h2">关系深度</text><text class="hint">DUNBAR ×4</text></view>
-    <relation-slider :scene="scene" v-model="level" />
+    <!-- STEP 01 场景 / 对方角色 -->
+    <view class="step"><text class="no">01</text><text class="h2">{{ mode==='school' ? '选择对方' : '选择场景' }}</text><text class="hint">{{ mode==='school' ? 'ROLE' : 'SCENE' }}</text></view>
+    <scene-tabs v-if="mode==='general'" :scenes="scenes" v-model="scene" />
+    <scene-tabs v-else :scenes="roleTabs" v-model="role" />
+    <view v-if="!scenes.length" class="scene-fallback">
+      <text>{{ scenesErr || '加载场景中…' }}</text>
+      <text v-if="scenesErr" class="retry" @click="loadScenes">点此重试</text>
+    </view>
+
+    <!-- STEP 02 关系深度 / 对方状态 -->
+    <view class="step"><text class="no">02</text><text class="h2">{{ mode==='school' ? '对方状态' : '关系深度' }}</text><text class="hint">{{ mode==='school' ? 'LEVEL ×4' : 'DUNBAR ×4' }}</text></view>
+    <relation-slider :levels="sliderLevels" :tips="sliderTips" :dunbar-capacity="sliderDunbar" v-model="level" />
 
     <!-- STEP 03 INPUT -->
     <view class="step"><text class="no">03</text><text class="h2">投喂对话</text><text class="hint">TEXT / IMG</text></view>
@@ -51,7 +62,7 @@
     <text v-if="errMsg" class="errmsg">{{ errMsg }}</text>
 
     <!-- 分析结果 -->
-    <result-panel :data="result" />
+    <result-panel :data="result" :is-school="resultIsSchool" />
 
     <!-- 转发（微信原生，仅小程序） -->
     <!-- #ifdef MP-WEIXIN -->
@@ -69,7 +80,7 @@
 import SceneTabs from '@/components/SceneTabs.vue'
 import RelationSlider from '@/components/RelationSlider.vue'
 import ResultPanel from '@/components/ResultPanel.vue'
-import { analyze, ocrImages } from '@/utils/request'
+import { analyze, ocrImages, getScenes } from '@/utils/request'
 import { chooseImagesBase64 } from '@/utils/image'
 
 export default {
@@ -84,6 +95,48 @@ export default {
         ? `「${st}」—— 灵魂翻译官帮我看穿了潜台词`
         : '灵魂翻译官 · 看穿聊天潜台词，拿回主动权'
     },
+    // 场景配置（来自后端 /api/scenes，单一来源）
+    scenes() {
+      return (this.scenesData && this.scenesData.scenes) || []
+    },
+    curSceneCfg() {
+      return this.scenes.find((s) => s.key === this.scene) || null
+    },
+    curLevels() {
+      return this.curSceneCfg ? this.curSceneCfg.levels : []
+    },
+    curTips() {
+      return this.curSceneCfg ? this.curSceneCfg.tips : []
+    },
+    dunbarCapacity() {
+      return (this.scenesData && this.scenesData.dunbarCapacity) || []
+    },
+    // 学校场景配置（来自 /api/scenes 的 school 块）
+    school() {
+      return (this.scenesData && this.scenesData.school) || null
+    },
+    // 复用 SceneTabs 渲染 4 个教师端角色卡（algo 上注释 + desc 下描述，与场景卡对齐）
+    roleTabs() {
+      return this.school
+        ? this.school.roles.map((r) => ({ key: r.key, emoji: r.emoji, title: r.title, desc: r.desc, algo: r.algo }))
+        : []
+    },
+    curRole() {
+      return this.school ? this.school.roles.find((r) => r.key === this.role) : null
+    },
+    // 滑块档位随模式切换：通用=邓巴亲密度，学校=该角色的配合↔难缠度
+    sliderLevels() {
+      return this.mode === 'school' ? (this.curRole ? this.curRole.levels : []) : this.curLevels
+    },
+    sliderTips() {
+      return this.mode === 'school' ? (this.curRole ? this.curRole.tips : []) : this.curTips
+    },
+    sliderDunbar() {
+      return this.mode === 'school' ? [] : this.dunbarCapacity
+    },
+  },
+  onLoad() {
+    this.loadScenes()
   },
   onShow() {
     // #ifdef MP-WEIXIN
@@ -104,17 +157,45 @@ export default {
   data() {
     return {
       scene: 'intimate',
+      mode: 'general', // 'general' 通用四象限 / 'school' 学校场景·教师端
+      role: 'parent',  // 学校模式下选中的教师端角色
       level: 1,
+      scenesData: null, // { scenes:[...], dunbarCapacity:[...], school:{...} }，来自 /api/scenes
+      scenesErr: '',
       text: '',
       images: [], // [{ base64, mime, preview }]
       maxImages: 6,
       loading: false,
       loadingLabel: '正在剥离情绪伪装…',
       result: null,
+      resultIsSchool: false, // 当前结果是否来自学校模式（决定结果面板标签）
       errMsg: '',
     }
   },
   methods: {
+    // B2：切换通用 / 学校场景模式，档位归位
+    switchMode(m) {
+      if (this.loading || this.mode === m) return
+      this.mode = m
+      this.level = 1
+    },
+    // A3：拉场景配置。先用本地缓存即时渲染（离线/冷启动也有内容），再后台拉最新覆盖
+    async loadScenes() {
+      try {
+        const cached = uni.getStorageSync('st_scenes')
+        if (cached && cached.scenes && cached.scenes.length) this.scenesData = cached
+      } catch (e) {}
+      try {
+        const data = await getScenes()
+        if (data && data.scenes && data.scenes.length) {
+          this.scenesData = data
+          this.scenesErr = ''
+          try { uni.setStorageSync('st_scenes', data) } catch (e) {}
+        }
+      } catch (e) {
+        if (!this.scenes.length) this.scenesErr = '场景加载失败，请检查网络后重试'
+      }
+    },
     // Step 5：选取聊天截图
     async onUploadTap() {
       if (this.loading) return
@@ -168,11 +249,13 @@ export default {
           }
         }
         this.loadingLabel = '正在剥离情绪伪装…'
-        this.result = await analyze({
-          scene: this.scene,
-          level: this.level,
-          text: finalText,
-        })
+        const isSchool = this.mode === 'school'
+        this.result = await analyze(
+          isSchool
+            ? { scene: 'school', role: this.role, level: this.level, text: finalText }
+            : { scene: this.scene, level: this.level, text: finalText }
+        )
+        this.resultIsSchool = isSchool
       } catch (e) {
         this.errMsg = (e && e.message) || '分析失败，请重试'
       } finally {
@@ -245,6 +328,44 @@ export default {
   font-family: 'Space Mono', monospace;
   font-size: 20rpx;
   color: $st-dim;
+}
+
+/* 模式切换：分段控件（一个胶囊容器，选中段填青柠） */
+.segctl {
+  display: flex;
+  background: $st-panel;
+  border: 2rpx solid $st-line;
+  border-radius: 999rpx;
+  padding: 6rpx;
+  margin: 8rpx 0;
+}
+.seg {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  border-radius: 999rpx;
+  color: $st-muted;
+  font-size: 26rpx;
+  font-weight: 700;
+  transition: 0.2s;
+}
+.seg.on {
+  background: $st-acid;
+  color: $st-bg;
+}
+
+/* 场景加载/失败兜底 */
+.scene-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32rpx;
+  font-size: 24rpx;
+  color: $st-dim;
+}
+.scene-fallback .retry {
+  margin-top: 12rpx;
+  color: $st-acid;
 }
 
 /* INPUT */

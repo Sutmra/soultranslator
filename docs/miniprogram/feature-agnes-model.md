@@ -38,6 +38,10 @@ Agnes 是 OpenAI 兼容的免费 AI 网关（新加坡 Singapore Sapiens Technol
 ## 进度
 - **步骤 1 ✅**（2026-06-22）：`/api/analyze` 加 `ANALYZE_PROVIDER`(deepseek|agnes) 可切换，默认 deepseek；启动日志打印当前 provider。本地验证：deepseek 回归不变；切 agnes(`agnes-2.0-flash`)返回结构化 JSON（**json mode 支持**）、中文质量好。坑记录：① `.env` 注释与 key 行黏一行会被当注释跳过（键值各占一行）② Win Git Bash 内联 `-d` 传中文会乱码，用 `--data-binary @utf8file` 测。
 
+- **步骤 2 ✅**（2026-06-22）：`/api/ocr` 加 `OCR_PROVIDER`(gemini|agnes) 可切换，默认 gemini；agnes 走 OpenAI vision（messages + image_url data URL，复用 ANALYZE_PROVIDERS.agnes）。启动日志加打 ocr provider。本地 app 上传真实微信截图验证：Agnes vision 格式正确、多气泡识别准、按颜色分清对方/我、跳过表情包，下游分析连贯。单样本，broader 质量待多测。
+
 ## 当前光标
-**下一步 = 步骤 2**（`/api/ocr` 加 `OCR_PROVIDER` gemini|agnes，默认 gemini；agnes 走 OpenAI vision 适配分支）。
-env：`AGNES_API_KEY`、`AGNES_MODEL`(默认 agnes-2.0-flash)、`ANALYZE_PROVIDER`(默认 deepseek)、`OCR_PROVIDER`(默认 gemini)。
+**两个 provider 切换都实现 + 验证完。** 下一步可选：
+- **步骤 3（可选）**：实验脚本压测 Agnes 限流 / 多样本质量 A/B —— 想上线前再做。
+- 或**收尾这个 feature**：走后端单独 PR（`feat/be-agnes` 已含步骤1/2 + 文档）+ Sutmra 双审。
+env：`AGNES_API_KEY`、`AGNES_MODEL`(默认 agnes-2.0-flash)、`ANALYZE_PROVIDER`(默认 deepseek)、`OCR_PROVIDER`(默认 gemini)。生产切换：Render 后台改这俩 `_PROVIDER` 变量重启。

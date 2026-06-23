@@ -19,6 +19,9 @@ const ANALYZE_PROVIDERS = {
   agnes:    { url: "https://apihub.agnes-ai.com/v1/chat/completions", key: process.env.AGNES_API_KEY, model: process.env.AGNES_MODEL || "agnes-2.0-flash", label: "Agnes" },
 };
 
+// OCR provider 可切换（默认 gemini）；agnes 复用上面 Agnes 的 url/key/model（同一多模态模型，走 OpenAI vision 格式）
+const OCR_PROVIDER = (process.env.OCR_PROVIDER || "gemini").toLowerCase();
+
 // Upstash Redis (REST) —— 持久化浏览量计数
 const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -140,11 +143,9 @@ app.post("/api/analyze", async (req, res) => {
   }
 });
 
-// Gemini OCR：从截图提取对话文字
+// OCR：从截图提取对话文字。provider 由 OCR_PROVIDER 切换（默认 gemini）
 // 兼容两种入参：新版多图 { images: [{ imageData, mimeType }] }；旧版单图 { imageData, mimeType }
 app.post("/api/ocr", async (req, res) => {
-  if (!GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
-
   let images = Array.isArray(req.body.images) ? req.body.images : null;
   if (!images && req.body.imageData) images = [{ imageData: req.body.imageData, mimeType: req.body.mimeType }];
   images = (images || []).filter(im => im && im.imageData);
@@ -156,24 +157,43 @@ app.post("/api/ocr", async (req, res) => {
   const instruction = images.length > 1 ? multi : single;
 
   try {
-    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-    const parts = images.map(im => ({ inline_data: { mime_type: im.mimeType || "image/jpeg", data: im.imageData } }));
-    parts.push({ text: instruction });
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: { temperature: 0, maxOutputTokens: 1536 }
-      }),
-    });
-    const data = await response.json();
-    if (!data.candidates || data.candidates.length === 0) {
-      const msg = data.error?.message || JSON.stringify(data).slice(0,200);
-      return res.status(500).json({ error: "Gemini API error: " + msg });
+    let text;
+    if (OCR_PROVIDER === "agnes") {
+      // Agnes：OpenAI vision 格式（messages 里 image_url data URL + text instruction）
+      const a = ANALYZE_PROVIDERS.agnes;
+      if (!a.key) return res.status(500).json({ error: "Agnes API key not configured" });
+      const content = images.map(im => ({ type: "image_url", image_url: { url: `data:${im.mimeType || "image/jpeg"};base64,${im.imageData}` } }));
+      content.push({ type: "text", text: instruction });
+      const response = await fetch(a.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + a.key },
+        body: JSON.stringify({ model: a.model, messages: [{ role: "user", content }], temperature: 0, max_tokens: 1536 }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        const msg = data.error?.message || JSON.stringify(data).slice(0, 200);
+        return res.status(response.status).json({ error: "Agnes OCR error: " + msg });
+      }
+      text = data.choices?.[0]?.message?.content?.trim() || "";
+    } else {
+      // Gemini（默认）：inline_data + contents/parts
+      if (!GEMINI_API_KEY) return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
+      const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+      const parts = images.map(im => ({ inline_data: { mime_type: im.mimeType || "image/jpeg", data: im.imageData } }));
+      parts.push({ text: instruction });
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts }], generationConfig: { temperature: 0, maxOutputTokens: 1536 } }),
+      });
+      const data = await response.json();
+      if (!data.candidates || data.candidates.length === 0) {
+        const msg = data.error?.message || JSON.stringify(data).slice(0,200);
+        return res.status(500).json({ error: "Gemini API error: " + msg });
+      }
+      text = data.candidates[0]?.content?.parts?.[0]?.text?.trim() || "";
     }
-    const text = data.candidates[0]?.content?.parts?.[0]?.text?.trim() || "";
     res.json({ text });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -184,4 +204,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("SoulTranslator backend running on port " + PORT);
   console.log("analyze provider: " + ANALYZE_PROVIDER + " (model " + (ANALYZE_PROVIDERS[ANALYZE_PROVIDER] || ANALYZE_PROVIDERS.deepseek).model + ")");
+  console.log("ocr provider: " + OCR_PROVIDER + (OCR_PROVIDER === "agnes" ? " (model " + ANALYZE_PROVIDERS.agnes.model + ")" : " (model " + (process.env.GEMINI_MODEL || "gemini-2.5-flash") + ")"));
 });

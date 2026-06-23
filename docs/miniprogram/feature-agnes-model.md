@@ -40,8 +40,13 @@ Agnes 是 OpenAI 兼容的免费 AI 网关（新加坡 Singapore Sapiens Technol
 
 - **步骤 2 ✅**（2026-06-22）：`/api/ocr` 加 `OCR_PROVIDER`(gemini|agnes) 可切换，默认 gemini；agnes 走 OpenAI vision（messages + image_url data URL，复用 ANALYZE_PROVIDERS.agnes）。启动日志加打 ocr provider。本地 app 上传真实微信截图验证：Agnes vision 格式正确、多气泡识别准、按颜色分清对方/我、跳过表情包，下游分析连贯。单样本，broader 质量待多测。
 
+## 实测对比结论（2026-06-23，DeepSeek/Gemini vs Agnes）
+本地脚本（`backend/compare-providers.js`、`compare-ocr.js`，已 git-ignore 留作复用）实测：
+- **分析（analyze）**：Agnes `agnes-2.0-flash` **慢 + 不稳**。短句 ~9–13s、4 次挂 1 次（upstream error）；**真实长对话（6 图拼接）40s 且输出截断、4 套嘴替只出 2 套**（撞 max_tokens）。DeepSeek 同输入 6s 稳稳 4 套。文笔 Agnes 更毒舌，但稳定性是硬伤。
+- **OCR**：Agnes 反而**更好**——同 6 图多图 OCR，Agnes 全覆盖且更完整，Gemini 漏 1 张+结尾截断；速度相当（~7–8s）。
+- **建议生产组合（若要省钱）**：`OCR_PROVIDER=agnes` + `ANALYZE_PROVIDER=deepseek`。**analyze 不建议切 agnes**（慢+截断，伤体验）。
+
 ## 当前光标
-**两个 provider 切换都实现 + 验证完。** 下一步可选：
-- **步骤 3（可选）**：实验脚本压测 Agnes 限流 / 多样本质量 A/B —— 想上线前再做。
-- 或**收尾这个 feature**：走后端单独 PR（`feat/be-agnes` 已含步骤1/2 + 文档）+ Sutmra 双审。
-env：`AGNES_API_KEY`、`AGNES_MODEL`(默认 agnes-2.0-flash)、`ANALYZE_PROVIDER`(默认 deepseek)、`OCR_PROVIDER`(默认 gemini)。生产切换：Render 后台改这俩 `_PROVIDER` 变量重启。
+**实现 + 实测都完成，收尾开 PR。** `feat/be-agnes` 全是后端+文档（server.js 步骤1/2 + 本文档），是干净的**后端单独 PR**（Sutmra 双审）。
+合并 → Render 自动部署 → 才能在 Render 后台填 env 切 provider（旧代码不读这些变量）。
+env：`AGNES_API_KEY`、`AGNES_MODEL`(默认 agnes-2.0-flash)、`ANALYZE_PROVIDER`(默认 deepseek)、`OCR_PROVIDER`(默认 gemini)。默认不设 → 行为与现网完全一致（零回归）。

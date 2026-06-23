@@ -35,6 +35,9 @@ Agnes 是 OpenAI 兼容的免费 AI 网关（新加坡 Singapore Sapiens Technol
 - Agnes：Base `https://apihub.agnes-ai.com/v1`，Bearer `AGNES_API_KEY`，model `agnes-2.0-flash`（同一模型多模态，分析+OCR 共用），OpenAI 兼容。
 - `/api/chat`、`/api/views` 等其它路径不动；DeepSeek/Gemini 原路径保留为各自默认。
 
+## 进度
+- **步骤 1 ✅**（2026-06-22）：`/api/analyze` 加 `ANALYZE_PROVIDER`(deepseek|agnes) 可切换，默认 deepseek；启动日志打印当前 provider。本地验证：deepseek 回归不变；切 agnes(`agnes-2.0-flash`)返回结构化 JSON（**json mode 支持**）、中文质量好。坑记录：① `.env` 注释与 key 行黏一行会被当注释跳过（键值各占一行）② Win Git Bash 内联 `-d` 传中文会乱码，用 `--data-binary @utf8file` 测。
+
 ## 当前光标
-**下一步 = 步骤 1 + 2**（analyze 与 ocr 两个 provider 都做成可切换，默认 deepseek/gemini）。前置：用户把 `AGNES_API_KEY` 填进本地 env（我不读）。实现后本地验证：默认走 DeepSeek+Gemini 回归不变 + 切 agnes 两条都能出结果。
+**下一步 = 步骤 2**（`/api/ocr` 加 `OCR_PROVIDER` gemini|agnes，默认 gemini；agnes 走 OpenAI vision 适配分支）。
 env：`AGNES_API_KEY`、`AGNES_MODEL`(默认 agnes-2.0-flash)、`ANALYZE_PROVIDER`(默认 deepseek)、`OCR_PROVIDER`(默认 gemini)。

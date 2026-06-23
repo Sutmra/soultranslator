@@ -11,6 +11,14 @@ const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const GEMINI_API_KEY   = process.env.GEMINI_API_KEY;
 const DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions";
 
+// 分析 provider 可切换（默认 deepseek；测试期可切免费 agnes，详见 docs/miniprogram/feature-agnes-model.md）
+// 两家都是 OpenAI 兼容 chat/completions，仅 URL/key/model 不同。切换只改环境变量 ANALYZE_PROVIDER。
+const ANALYZE_PROVIDER = (process.env.ANALYZE_PROVIDER || "deepseek").toLowerCase();
+const ANALYZE_PROVIDERS = {
+  deepseek: { url: DEEPSEEK_URL, key: DEEPSEEK_API_KEY, model: process.env.DEEPSEEK_MODEL || "deepseek-chat", label: "DeepSeek" },
+  agnes:    { url: "https://apihub.agnes-ai.com/v1/chat/completions", key: process.env.AGNES_API_KEY, model: process.env.AGNES_MODEL || "agnes-2.0-flash", label: "Agnes" },
+};
+
 // Upstash Redis (REST) —— 持久化浏览量计数
 const UPSTASH_URL   = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -85,10 +93,11 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-// DeepSeek 分析（D11-B 大脑上移）：入参 { scene, level, text }，后端内置 prompt → DeepSeek → 结构化 JSON
-// 与原前端 buildPrompt + /api/chat 调用严格等价（回归保证）；/api/chat 保留兼容、逐步弃用。
+// 分析（D11-B 大脑上移）：入参 { scene, level, text, role? }，后端内置 prompt → provider → 结构化 JSON
+// provider 由 ANALYZE_PROVIDER 切换（默认 deepseek）；与原前端 buildPrompt 调用等价（回归保证）。
 app.post("/api/analyze", async (req, res) => {
-  if (!DEEPSEEK_API_KEY) return res.status(500).json({ error: "DEEPSEEK_API_KEY not configured" });
+  const p = ANALYZE_PROVIDERS[ANALYZE_PROVIDER] || ANALYZE_PROVIDERS.deepseek;
+  if (!p.key) return res.status(500).json({ error: p.label + " API key not configured" });
 
   const { scene, role, text } = req.body || {};
   const level = Number(req.body && req.body.level);
@@ -101,11 +110,11 @@ app.post("/api/analyze", async (req, res) => {
   }
 
   try {
-    const response = await fetch(DEEPSEEK_URL, {
+    const response = await fetch(p.url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + DEEPSEEK_API_KEY },
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + p.key },
       body: JSON.stringify({
-        model: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+        model: p.model,
         messages: [
           { role: "system", content: buildSystemPrompt(scene, level, role) },
           { role: "user", content: `【对方说的话】：${text}` },
@@ -118,7 +127,7 @@ app.post("/api/analyze", async (req, res) => {
     const data = await response.json();
     if (!response.ok) {
       const msg = data.error?.message || JSON.stringify(data).slice(0, 200);
-      return res.status(response.status).json({ error: "DeepSeek API error: " + msg });
+      return res.status(response.status).json({ error: p.label + " API error: " + msg });
     }
     const raw = data.choices?.[0]?.message?.content || "";
     const clean = raw.replace(/```json|```/g, "").trim();
@@ -172,4 +181,7 @@ app.post("/api/ocr", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("SoulTranslator backend running on port " + PORT));
+app.listen(PORT, () => {
+  console.log("SoulTranslator backend running on port " + PORT);
+  console.log("analyze provider: " + ANALYZE_PROVIDER + " (model " + (ANALYZE_PROVIDERS[ANALYZE_PROVIDER] || ANALYZE_PROVIDERS.deepseek).model + ")");
+});
